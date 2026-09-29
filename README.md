@@ -1,6 +1,6 @@
-# Ctrl Alt One — Frontend
+# Ctrl Alt Distract — Frontend
 
-Frontend-only implementation of the **Ctrl Alt One** competitive-programming arcade UI, built from the Stitch design spec (`design.md`) and screen set in this repo.
+Frontend-only implementation of the **Ctrl Alt Distract** competitive-programming arcade UI, built from the Stitch design spec (`design.md`) and screen set in this repo.
 
 Stack: React 19 + TypeScript + Vite + Tailwind CSS v4 + React Router. No backend — the Arena page uses local component state (and a small "Demo controls" panel) to walk through every documented state: distraction trigger/clear/timeout, run/submit outcomes, timer urgency levels, offline banner, and round transitions.
 
@@ -8,14 +8,15 @@ Stack: React 19 + TypeScript + Vite + Tailwind CSS v4 + React Router. No backend
 
 | Route | Page |
 |---|---|
-| `/` | Landing |
+| `/` | Redirects to `/login` |
 | `/rules` | Public rulebook |
-| `/login` | Auth (sign in / sign up) |
+| `/login` | Auth (sign in / sign up) — the default page |
 | `/dashboard` | Participant dashboard (state switcher for demo) |
 | `/lobby` | Lobby + countdown overlay |
 | `/arena` | Competition arena (HUD, editor, distraction system, transitions) |
 | `/complete` | Completion screen |
 | `/leaderboard` | Leaderboard |
+| `/admin` | Admin console (start/end event, proctoring alerts, leaderboard) |
 | `*` | 404 |
 
 ## Development

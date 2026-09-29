@@ -15,12 +15,9 @@ export function Footer() {
             <p className="font-body text-sm text-text-muted">{EVENT.collegeName}</p>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="font-label text-xs uppercase tracking-[0.08em] text-text-muted">
+            <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
               Event
             </span>
-            <a href="/#how-it-works" className="font-body text-sm text-text-secondary hover:text-text-primary">
-              How it works
-            </a>
             <Link to="/rules" className="font-body text-sm text-text-secondary hover:text-text-primary">
               Rules
             </Link>
@@ -32,7 +29,7 @@ export function Footer() {
             </Link>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="font-label text-xs uppercase tracking-[0.08em] text-text-muted">
+            <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
               Community
             </span>
             <a href="#" className="font-body text-sm text-text-secondary hover:text-text-primary">
@@ -47,7 +44,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 border-t border-border-hairline pt-6 font-body text-xs text-text-muted">
-          © 2026 Ctrl Alt One · {EVENT.organizerName}
+          © 2026 Ctrl Alt Distract · {EVENT.organizerName}
         </div>
       </div>
     </footer>

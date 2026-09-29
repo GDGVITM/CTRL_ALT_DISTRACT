@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { Logo } from "../Logo";
 import { StatusBadge } from "../ui/Badge";
 import { PLAYER } from "../../lib/data";
 import { cn } from "../../lib/utils";
+import { signOut } from "../../lib/auth";
 
 export type EventBadgeState = "upcoming" | "joined" | "waiting" | "live" | "ended" | "finished";
 
@@ -22,6 +23,12 @@ const badgeConfig: Record<
 
 export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeState }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const logOut = () => {
+    signOut();
+    navigate("/login", { replace: true });
+  };
   const badge = badgeConfig[eventState];
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -32,7 +39,7 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
 
   return (
     <header className="sticky top-0 z-sticky h-16 border-b border-border-hairline bg-bg-canvas sm:h-[72px]">
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between px-4 sm:px-8">
+      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-8">
           <Link to="/dashboard">
             <Logo size={26} />
@@ -77,7 +84,10 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
                 >
                   Rulebook
                 </Link>
-                <button className="flex w-full items-center gap-2 px-4 py-2.5 text-left font-body text-sm text-text-secondary hover:bg-bg-hover hover:text-danger">
+                <button
+                  onClick={logOut}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left font-body text-sm text-text-secondary hover:bg-bg-hover hover:text-danger"
+                >
                   <LogOut size={14} /> Log out
                 </button>
               </div>

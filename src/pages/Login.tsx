@@ -6,6 +6,7 @@ import { Button, PixelSpinner } from "../components/ui/Button";
 import { TextInput } from "../components/ui/Input";
 import { ArcadeDino } from "../components/ArcadeDino";
 import { cn } from "../lib/utils";
+import { signIn } from "../lib/auth";
 
 type Mode = "sign-in" | "sign-up";
 type Status = "idle" | "submitting" | "error" | "success";
@@ -23,6 +24,7 @@ export default function Login() {
     setErrorMsg("");
     setTimeout(() => {
       setStatus("success");
+      signIn();
       setTimeout(() => navigate("/dashboard"), 400);
     }, 900);
   };
@@ -31,7 +33,7 @@ export default function Login() {
     setStatus("submitting");
     setTimeout(() => {
       setStatus("error");
-      setErrorMsg("Email or password is incorrect. Try again or continue with Google.");
+      setErrorMsg("Email or password is incorrect. Try again.");
     }, 900);
   };
 
@@ -52,12 +54,12 @@ export default function Login() {
             <Logo size={36} wordmark={false} />
           </div>
 
-          <h1 className="font-sans text-3xl font-bold text-text-primary">
+          <h1 className="font-display text-4xl text-text-primary sm:text-5xl">
             {mode === "sign-in" ? "Welcome, player." : "Create your player."}
           </h1>
           <p className="mt-2 font-body text-text-secondary">
             {mode === "sign-in"
-              ? "Sign in to join Ctrl Alt One."
+              ? "Sign in to join Ctrl Alt Distract."
               : "Set up your profile to enter the arena."}
           </p>
 
@@ -75,28 +77,6 @@ export default function Login() {
             {mode === "sign-up" && (
               <TextInput label="Full name" placeholder="Your name" required readOnly={status === "submitting"} />
             )}
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              fullWidth
-              icon={
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white font-mono text-[11px] font-bold text-black">
-                  G
-                </span>
-              }
-              className="normal-case tracking-normal"
-              disabled={status === "submitting"}
-            >
-              Continue with Google
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <span className="h-px flex-1 bg-border-hairline" />
-              <span className="font-body text-xs text-text-muted">or</span>
-              <span className="h-px flex-1 bg-border-hairline" />
-            </div>
 
             <TextInput
               type="email"
