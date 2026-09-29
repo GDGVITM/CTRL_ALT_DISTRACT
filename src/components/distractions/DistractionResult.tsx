@@ -13,6 +13,7 @@ interface DistractionResultViewProps {
   nextProblemIndex?: number;
   continueButtonText?: string;
   isRunAllMode?: boolean;
+  hasNextChallenge?: boolean;
 }
 
 export const DistractionResultView: React.FC<DistractionResultViewProps> = ({
@@ -22,6 +23,7 @@ export const DistractionResultView: React.FC<DistractionResultViewProps> = ({
   onRetry,
   nextProblemIndex,
   continueButtonText,
+  hasNextChallenge = true,
 }) => {
   const isPassed = result.result === 'passed';
   const isTimeout = result.result === 'timeout';
@@ -42,11 +44,11 @@ export const DistractionResultView: React.FC<DistractionResultViewProps> = ({
     }
   }, [isPassed]);
 
-  const defaultButtonLabel = isPassed 
-    ? (nextProblemIndex ? `RETURN TO CODING (PROBLEM #${nextProblemIndex})` : 'RETURN TO CODING')
-    : (nextProblemIndex ? `CONTINUE TO PROBLEM #${nextProblemIndex}` : 'CONTINUE TO NEXT PROBLEM');
+  const defaultButtonLabel = continueButtonText || (
+    hasNextChallenge ? 'NEXT CHALLENGE' : 'FINISH'
+  );
 
-  const buttonLabel = continueButtonText || defaultButtonLabel;
+  const buttonLabel = defaultButtonLabel;
 
   return (
     <div className="flex flex-col items-center justify-center text-center p-5 max-w-xl mx-auto w-full">

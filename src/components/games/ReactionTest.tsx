@@ -57,15 +57,15 @@ export const ReactionTest: React.FC<CommonGameProps> = ({ onPass, onFail, isPaus
       setReactionTime(elapsed);
       setStage('clicked');
 
-      if (elapsed <= 550) {
+      if (elapsed <= 900) {
         playCorrect();
         setTimeout(() => {
-          onPass({ reactionTimeMs: elapsed, grade: elapsed < 250 ? 'S+' : elapsed < 350 ? 'A' : 'B' });
+          onPass({ reactionTimeMs: elapsed, grade: elapsed < 350 ? 'S+' : elapsed < 600 ? 'A' : 'B' });
         }, 1200);
       } else {
         playWrong();
         setTimeout(() => {
-          onFail(`Reaction Too Slow (${elapsed}ms > 550ms)`, { reactionTimeMs: elapsed });
+          onFail(`Reaction Too Slow (${elapsed}ms > 900ms)`, { reactionTimeMs: elapsed });
         }, 1400);
       }
     }
@@ -187,7 +187,7 @@ export const ReactionTest: React.FC<CommonGameProps> = ({ onPass, onFail, isPaus
               {reactionTime} <span className="text-2xl font-mono font-normal text-cyan-300">ms</span>
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-semibold">
-              {reactionTime < 250 ? '⚡ GODLIKE (S-TIER)' : reactionTime < 350 ? '🎯 SHARP REFLEXES (A-TIER)' : '✅ PASSING GRADE'}
+              {reactionTime <= 300 ? '⚡ GODLIKE (S-TIER)' : reactionTime <= 600 ? '🎯 SHARP REFLEXES (A-TIER)' : reactionTime <= 900 ? '✅ PASSING GRADE (<= 900ms)' : '❌ TOO SLOW (> 900ms)'}
             </div>
           </motion.div>
         )}

@@ -28,6 +28,7 @@ export interface DistractionProps {
   isRunAllMode?: boolean;
   showDevControls?: boolean;
   problemId?: number;
+  hasNextChallenge?: boolean;
 }
 
 type ModalPhase = 'intro' | 'playing' | 'result';

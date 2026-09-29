@@ -11,7 +11,7 @@ export const DISTRACTIONS: DistractionMeta[] = [
     description: 'Intercept high-priority signal. Click target instantly when the signal triggers.',
     objective: 'Click as fast as possible when target turns active. False starts penalize.',
     icon: 'Zap',
-    targetRequirement: 'Reaction Time < 450ms',
+    targetRequirement: 'Reaction Time <= 900ms',
     estimatedSeconds: 8,
   },
   {
