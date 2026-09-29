@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET:-}
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
