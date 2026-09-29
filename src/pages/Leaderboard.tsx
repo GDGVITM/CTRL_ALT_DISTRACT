@@ -1,3 +1,4 @@
+import { ArcadeSides } from "../components/ArcadeSides";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { AppHeader } from "../components/headers/AppHeader";
@@ -60,23 +61,24 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="min-h-screen bg-bg-canvas">
+    <div className="min-h-screen bg-bg-canvas isolate">
+      <ArcadeSides contentMax={1120} />
       <AppHeader eventState="ended" />
 
-      <div className="crt-scanlines relative border-b border-border-hairline bg-bg-base px-4 py-10 sm:px-8">
-        <div className="mx-auto max-w-[1120px]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h1 className="font-pixel text-xl text-text-primary sm:text-2xl">High scores</h1>
+      <div className="crt-scanlines relative border-b border-border-hairline bg-bg-base px-4 py-4 sm:px-8">
+        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl leading-none text-text-primary sm:text-4xl">High scores</h1>
             <StatusBadge tone="yellow" icon="■">
               Final
             </StatusBadge>
+            <span className="hidden font-body text-sm text-text-muted sm:inline">
+              {LEADERBOARD.length} players
+            </span>
           </div>
-          <p className="mt-2 font-body text-text-secondary">
-            Ctrl Alt One · {LEADERBOARD.length} players
-          </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <div className="relative w-full max-w-xs">
+          <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+            <div className="relative w-full sm:w-64">
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 value={query}
@@ -100,7 +102,7 @@ export default function Leaderboard() {
                     setPage(1);
                   }}
                   className={cn(
-                    "px-4 py-2 font-label text-[11px] uppercase tracking-wide",
+                    "px-4 py-2 font-label text-[16px] uppercase tracking-[0.04em]",
                     filterTop10 === val ? "bg-bg-elevated text-accent-cyan" : "text-text-secondary",
                   )}
                 >
@@ -112,7 +114,7 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-[1120px] px-4 py-10 sm:px-8">
+      <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-8">
         {/* Podium */}
         {!query && currentPage === 1 && podium.length === 3 && <Podium entries={podium} />}
 
@@ -121,22 +123,22 @@ export default function Leaderboard() {
           <table className="w-full min-w-[640px] border-collapse">
             <thead>
               <tr className="sticky top-0 border-b border-border-default bg-bg-base">
-                <th className="w-20 px-4 py-3 text-left font-label text-[11px] uppercase tracking-wide text-text-muted">
+                <th className="w-20 px-4 py-3 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Rank
                 </th>
-                <th className="px-4 py-3 text-left font-label text-[11px] uppercase tracking-wide text-text-muted">
+                <th className="px-4 py-3 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Player
                 </th>
-                <th className="px-4 py-3 text-right font-label text-[11px] uppercase tracking-wide text-text-muted">
+                <th className="px-4 py-3 text-right font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Round pts
                 </th>
-                <th className="px-4 py-3 text-right font-label text-[11px] uppercase tracking-wide text-accent-magenta">
+                <th className="px-4 py-3 text-right font-label text-[16px] uppercase tracking-[0.04em] text-accent-magenta">
                   Bonus
                 </th>
-                <th className="px-4 py-3 text-right font-label text-[11px] uppercase tracking-wide text-accent-yellow">
+                <th className="px-4 py-3 text-right font-label text-[16px] uppercase tracking-[0.04em] text-accent-yellow">
                   Total
                 </th>
-                <th className="px-4 py-3 text-right font-label text-[11px] uppercase tracking-wide text-text-muted">
+                <th className="px-4 py-3 text-right font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Time taken
                 </th>
               </tr>
@@ -156,7 +158,7 @@ export default function Leaderboard() {
                   <td className="px-4 py-3.5 font-mono text-sm font-bold text-text-primary">
                     {r.self && <span className="mr-1 text-accent-yellow">▶</span>}
                     {r.rank <= 3 ? (
-                      <span className="font-pixel text-[11px]">{padScore(r.rank, 2)}</span>
+                      <span className="font-display text-[14px]">{padScore(r.rank, 2)}</span>
                     ) : (
                       padScore(r.rank, 2)
                     )}
@@ -168,7 +170,7 @@ export default function Leaderboard() {
                       </span>
                       <span className="font-body text-sm font-medium text-text-primary">{r.name}</span>
                       {r.self && (
-                        <span className="rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[9px] text-accent-yellow">
+                        <span className="rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[14px] text-accent-yellow">
                           YOU
                         </span>
                       )}
@@ -215,7 +217,7 @@ export default function Leaderboard() {
                 onClick={() => goTo(currentPage - 1)}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="flex h-9 items-center gap-1 rounded-xs border border-border-strong px-3 font-label text-[11px] uppercase tracking-wide text-text-primary hover:bg-bg-hover disabled:cursor-not-allowed disabled:border-border-default disabled:text-text-disabled disabled:hover:bg-transparent"
+                className="flex h-9 items-center gap-1 rounded-xs border border-border-strong px-3 font-label text-[16px] uppercase tracking-[0.04em] text-text-primary hover:bg-bg-hover disabled:cursor-not-allowed disabled:border-border-default disabled:text-text-disabled disabled:hover:bg-transparent"
               >
                 <ChevronLeft size={14} /> Prev
               </button>
@@ -243,7 +245,7 @@ export default function Leaderboard() {
                 onClick={() => goTo(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 aria-label="Next page"
-                className="flex h-9 items-center gap-1 rounded-xs border border-border-strong px-3 font-label text-[11px] uppercase tracking-wide text-text-primary hover:bg-bg-hover disabled:cursor-not-allowed disabled:border-border-default disabled:text-text-disabled disabled:hover:bg-transparent"
+                className="flex h-9 items-center gap-1 rounded-xs border border-border-strong px-3 font-label text-[16px] uppercase tracking-[0.04em] text-text-primary hover:bg-bg-hover disabled:cursor-not-allowed disabled:border-border-default disabled:text-text-disabled disabled:hover:bg-transparent"
               >
                 Next <ChevronRight size={14} />
               </button>
