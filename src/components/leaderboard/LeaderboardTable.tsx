@@ -23,27 +23,27 @@ export function LeaderboardTable({
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-border-default bg-bg-base">
-            <th className="w-16 px-3 py-2.5 text-left font-label text-[11px] uppercase tracking-wide text-text-muted">
+            <th className="w-16 px-3 py-2.5 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
               Rank
             </th>
-            <th className="px-3 py-2.5 text-left font-label text-[11px] uppercase tracking-wide text-text-muted">
+            <th className="px-3 py-2.5 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
               Player
             </th>
             {!compact && (
-              <th className="px-3 py-2.5 text-right font-label text-[11px] uppercase tracking-wide text-text-muted">
+              <th className="px-3 py-2.5 text-right font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                 Round pts
               </th>
             )}
             {!compact && (
-              <th className="px-3 py-2.5 text-right font-label text-[11px] uppercase tracking-wide text-accent-magenta">
+              <th className="px-3 py-2.5 text-right font-label text-[16px] uppercase tracking-[0.04em] text-accent-magenta">
                 Bonus
               </th>
             )}
-            <th className="px-3 py-2.5 text-right font-label text-[11px] uppercase tracking-wide text-accent-yellow">
+            <th className="px-3 py-2.5 text-right font-label text-[16px] uppercase tracking-[0.04em] text-accent-yellow">
               Total
             </th>
             {!compact && (
-              <th className="px-3 py-2.5 text-right font-label text-[11px] uppercase tracking-wide text-text-muted">
+              <th className="px-3 py-2.5 text-right font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                 Time taken
               </th>
             )}
@@ -62,7 +62,7 @@ export function LeaderboardTable({
             >
               <td className="px-3 py-3 font-mono text-sm font-bold text-text-primary">
                 {r.rank <= 3 ? (
-                  <span className="font-pixel text-[11px]">{padScore(r.rank, 2)}</span>
+                  <span className="font-display text-[14px]">{padScore(r.rank, 2)}</span>
                 ) : (
                   padScore(r.rank, 2)
                 )}
@@ -76,7 +76,7 @@ export function LeaderboardTable({
                     {r.name}
                   </span>
                   {r.self && (
-                    <span className="rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[9px] text-accent-yellow">
+                    <span className="rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[14px] text-accent-yellow">
                       YOU
                     </span>
                   )}
