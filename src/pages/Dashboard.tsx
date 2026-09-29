@@ -1,3 +1,4 @@
+import { ArcadeSides } from "../components/ArcadeSides";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, X } from "lucide-react";
@@ -27,7 +28,7 @@ const STATE_META: Record<
   waiting: {
     badge: "waiting",
     cta: "Lobby opens soon",
-    helper: `The lobby opens at ${EVENT.eventTime}.`,
+    helper: "The lobby opens soon.",
     disabled: true,
     lock: true,
   },
@@ -62,8 +63,13 @@ export default function Dashboard() {
   }, [eventStatus]);
 
   const meta = STATE_META[state];
+  const checklistDone = checks.every(Boolean);
+  const gated = state === "not-joined" && !checklistDone;
+  const ctaDisabled = !!meta.disabled || gated;
+  const gatedClass = gated ? "disabled:bg-white! disabled:text-neutral-500!" : undefined;
 
   const handlePrimary = () => {
+    if (gated) return;
     if (state === "not-joined") return setConfirmOpen(true);
     if (state === "joined") return navigate("/lobby");
     if (state === "live") return navigate("/arena");
@@ -80,15 +86,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-canvas">
+    <div className="min-h-screen bg-bg-canvas isolate">
+      <ArcadeSides contentMax={1280} />
       <AppHeader eventState={meta.badge} />
 
       <main className="mx-auto max-w-[1280px] px-4 py-10 pb-24 sm:px-8 lg:pb-10">
-        <h1 className="font-sans text-4xl font-bold text-text-primary">
+        <h1 className="font-display text-5xl text-text-primary sm:text-6xl">
           Hi, {PLAYER.firstName}.
         </h1>
         <p className="mt-1 font-body text-sm text-text-muted">
-          Player ID {PLAYER.playerId} · Your College
+          Player ID {PLAYER.playerId} · {EVENT.collegeName}
         </p>
 
         {/* dev state switcher */}
@@ -98,7 +105,7 @@ export default function Dashboard() {
               key={s}
               onClick={() => setState(s)}
               className={cn(
-                "rounded-xs border px-2.5 py-1 font-label text-[10px] uppercase tracking-wide",
+                "rounded-xs border px-2.5 py-1 font-label text-[15px] uppercase tracking-[0.04em]",
                 state === s
                   ? "border-accent-cyan text-accent-cyan"
                   : "border-border-default text-text-muted hover:text-text-secondary",
@@ -116,11 +123,11 @@ export default function Dashboard() {
               <div className="absolute inset-x-0 top-0 h-[2px] bg-accent-yellow" />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-pixel text-base text-text-primary sm:text-lg">
-                  CTRL ALT ONE
+                  CTRL ALT DISTRACT
                 </h2>
                 <span
                   className={cn(
-                    "rounded-xs border px-2.5 py-1 font-label text-[11px] uppercase tracking-wide",
+                    "rounded-xs border px-2.5 py-1 font-label text-[16px] uppercase tracking-[0.04em]",
                     meta.badge === "live" && "border-danger/40 bg-fill-danger text-danger",
                     meta.badge === "waiting" && "border-warning/40 bg-fill-warning text-warning",
                     (meta.badge === "upcoming" || meta.badge === "joined") &&
@@ -132,9 +139,6 @@ export default function Dashboard() {
                   {meta.badge}
                 </span>
               </div>
-              <p className="mt-2 font-body text-text-secondary">
-                Starts {EVENT.eventDate} at {EVENT.eventTime}
-              </p>
 
               <div className="mt-6 grid grid-cols-2 divide-x divide-border-default border border-border-default sm:grid-cols-4">
                 {[
@@ -144,7 +148,7 @@ export default function Dashboard() {
                   ["Languages", "C · C++ · JAVA · PY"],
                 ].map(([label, val]) => (
                   <div key={label} className="px-4 py-3">
-                    <div className="font-label text-[10px] uppercase tracking-wider text-text-muted">
+                    <div className="font-label text-[15px] uppercase tracking-[0.04em]r text-text-muted">
                       {label}
                     </div>
                     <div className="mt-1 font-mono text-lg font-bold text-text-primary">
@@ -159,7 +163,8 @@ export default function Dashboard() {
                   variant="primary"
                   size="lg"
                   chamfer
-                  disabled={meta.disabled}
+                  disabled={ctaDisabled}
+                  className={gatedClass}
                   icon={meta.lock ? <Lock size={18} /> : undefined}
                   onClick={handlePrimary}
                 >
@@ -174,7 +179,9 @@ export default function Dashboard() {
                   Read the rulebook
                 </button>
               </div>
-              <p className="mt-3 font-body text-sm text-text-muted">{meta.helper}</p>
+              <p className="mt-3 font-body text-sm text-text-muted">
+                {gated ? "Tick all three checklist items to enable joining." : meta.helper}
+              </p>
             </div>
           </div>
 
@@ -188,7 +195,7 @@ export default function Dashboard() {
                   ["Score", state === "finished" || state === "ended" ? "0870" : "----"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-2.5">
-                    <span className="font-label text-[11px] uppercase tracking-wide text-text-muted">
+                    <span className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                       {k}
                     </span>
                     <span className="font-mono text-sm font-bold text-text-primary">{v}</span>
@@ -219,14 +226,22 @@ export default function Dashboard() {
 
         {/* Rulebook */}
         <div id="rulebook" className="mt-10 scroll-mt-20">
-          <h2 className="mb-4 font-sans text-2xl font-bold text-text-primary">Rulebook</h2>
+          <h2 className="mb-4 font-display text-3xl text-text-primary">Rulebook</h2>
           <Rulebook />
         </div>
       </main>
 
       {/* mobile sticky CTA */}
       <div className="fixed inset-x-0 bottom-0 z-sticky flex h-[72px] items-center border-t border-border-hairline bg-bg-base px-4 lg:hidden">
-        <Button variant="primary" size="lg" chamfer fullWidth disabled={meta.disabled} onClick={handlePrimary}>
+        <Button
+          variant="primary"
+          size="lg"
+          chamfer
+          fullWidth
+          disabled={ctaDisabled}
+          className={gatedClass}
+          onClick={handlePrimary}
+        >
           {meta.cta}
         </Button>
       </div>
@@ -237,7 +252,7 @@ export default function Dashboard() {
           <div className="w-full max-w-[440px] border-t-2 border-accent-cyan bg-bg-elevated p-6 sm:border-t-0 sm:border-2">
             <div className="flex items-start justify-between">
               <h3 className="font-sans text-lg font-semibold text-text-primary">
-                Join Ctrl Alt One?
+                Join Ctrl Alt Distract?
               </h3>
               <button
                 onClick={() => setConfirmOpen(false)}
