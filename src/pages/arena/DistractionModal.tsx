@@ -88,7 +88,7 @@ export function DistractionModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-accent-magenta/50 bg-fill-bonus px-5 py-3.5">
-          <span id="distraction-title" className="font-label text-sm font-bold uppercase tracking-wide text-accent-magenta">
+          <span id="distraction-title" className="font-label text-base uppercase tracking-[0.04em] text-accent-magenta">
             ⚡ Distraction {index.toString().padStart(2, "0")}
           </span>
           <span className="flex items-center gap-1.5 font-mono text-lg font-bold text-accent-magenta">
@@ -104,7 +104,7 @@ export function DistractionModal({
               <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-success text-4xl text-success">
                 ✓
               </div>
-              <p className="mt-4 font-pixel text-lg text-success">CLEARED</p>
+              <p className="mt-4 font-display text-2xl text-success">CLEARED</p>
               <p className="mt-2 font-mono text-2xl font-extrabold text-accent-magenta">
                 +{EVENT.bonusPoints} BONUS
               </p>
@@ -114,7 +114,7 @@ export function DistractionModal({
               <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-danger text-4xl text-danger">
                 0
               </div>
-              <p className="mt-4 font-pixel text-lg text-danger">TIME'S UP</p>
+              <p className="mt-4 font-display text-2xl text-danger">TIME'S UP</p>
               <p className="mt-2 max-w-xs text-center font-body text-sm text-text-secondary">
                 No bonus this time. Back to your problem.
               </p>
@@ -146,7 +146,7 @@ export function DistractionModal({
                   {phase === "checking" ? <PixelSpinner size={24} /> : seconds}
                 </span>
               </div>
-              <p className="mt-3 font-label text-xs uppercase tracking-wide text-text-muted">
+              <p className="mt-3 font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
                 {phase === "checking" ? "Checking…" : urgency === "critical" ? "Hurry" : "Seconds remaining"}
               </p>
               <div className="mt-3 h-1.5 w-full max-w-[360px] bg-bg-inset">

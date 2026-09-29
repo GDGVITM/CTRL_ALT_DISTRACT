@@ -65,7 +65,7 @@ export function ArenaHUD({
 
       {/* Round */}
       <div className="flex flex-col justify-center gap-1 border-r border-border-default px-4">
-        <span className="font-label text-[10px] uppercase tracking-wide text-text-muted">
+        <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
           Round
         </span>
         <span className="font-mono text-lg font-bold text-text-primary font-tnum sm:text-xl">
@@ -96,7 +96,7 @@ export function ArenaHUD({
 
       {/* Problem meta */}
       <div className="hidden min-w-0 items-center gap-2 border-r border-border-default px-4 xl:flex">
-        <span className="rounded-xs bg-fill-warning px-1.5 py-0.5 font-label text-[10px] text-warning">
+        <span className="rounded-xs bg-fill-warning px-1.5 py-0.5 font-label text-[15px] text-warning">
           ▲ {PROBLEM.difficulty}
         </span>
         <span className="truncate font-body text-sm text-text-secondary">{PROBLEM.title}</span>
@@ -105,7 +105,7 @@ export function ArenaHUD({
       {/* Timer (centered) */}
       <div className="flex flex-1 items-center justify-center px-2">
         <div className={cn("flex flex-col items-center border-2 px-4 py-1 chamfer", frameColor)}>
-          <span className={cn("font-label text-[9px] uppercase tracking-wide sm:text-[10px]", timerColor)}>
+          <span className={cn("font-label text-[14px] uppercase tracking-[0.04em] sm:text-[15px]", timerColor)}>
             {timerLabel}
           </span>
           <div className="relative font-mono text-2xl font-extrabold font-tnum sm:text-3xl">
@@ -117,7 +117,7 @@ export function ArenaHUD({
 
       {/* Score */}
       <div className="flex flex-col justify-center gap-1 border-l border-border-default px-4">
-        <span className="font-label text-[10px] uppercase tracking-wide text-text-muted">
+        <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
           Score
         </span>
         <div className="relative font-mono text-lg font-bold text-accent-yellow font-tnum sm:text-2xl">
@@ -128,7 +128,7 @@ export function ArenaHUD({
 
       {/* Interrupt */}
       <div className="hidden flex-col justify-center gap-1 border-l border-border-default px-4 sm:flex">
-        <span className="font-label text-[10px] uppercase tracking-wide text-text-muted">
+        <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
           Interrupt
         </span>
         <span
