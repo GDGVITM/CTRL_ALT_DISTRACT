@@ -30,14 +30,11 @@ export function PublicHeader({ signedIn = false }: { signedIn?: boolean }) {
         scrolled ? "bg-bg-canvas/85 backdrop-blur-md" : "bg-bg-canvas",
       )}
     >
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between px-4 sm:px-8 lg:px-16">
-        <Link to="/">
+      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
+        <Link to="/login">
           <Logo size={26} />
         </Link>
         <nav className="hidden items-center gap-8 lg:flex">
-          <a href="/#how-it-works" className={navLinkClass({ isActive: false })}>
-            How it works
-          </a>
           <NavLink to="/rules" className={navLinkClass}>
             Rules
           </NavLink>
@@ -78,13 +75,6 @@ export function PublicHeader({ signedIn = false }: { signedIn?: boolean }) {
             </button>
           </div>
           <nav className="mt-10 flex flex-col divide-y divide-border-hairline">
-            <a
-              href="/#how-it-works"
-              className="flex h-14 items-center font-sans text-lg text-text-primary"
-              onClick={() => setMenuOpen(false)}
-            >
-              How it works
-            </a>
             <Link
               to="/rules"
               className="flex h-14 items-center font-sans text-lg text-text-primary"
