@@ -164,12 +164,13 @@ export default function Login() {
             {mode === "sign-up" && (
               <>
                 <TextInput
+                  id="full-name"
                   label="Full name"
                   placeholder="Ada Lovelace"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  readOnly={status === "submitting"}
+                  disabled={status === "submitting"}
                 />
 
                 {/* Role Selector */}
@@ -231,13 +232,14 @@ export default function Login() {
             </div>
 
             <TextInput
+              id="email-address"
               type="email"
               label="Email"
               placeholder="you@college.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              readOnly={status === "submitting"}
+              disabled={status === "submitting"}
             />
 
             <div>
@@ -262,7 +264,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                readOnly={status === "submitting"}
+                disabled={status === "submitting"}
                 trailing={
                   <button
                     type="button"
