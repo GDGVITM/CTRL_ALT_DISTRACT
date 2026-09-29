@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { cn } from "../../lib/utils";
+import { CHARACTERS, PixelSprite, type CharacterKey } from "./sprites";
 
 interface Entry {
   rank: number;
@@ -9,11 +10,16 @@ interface Entry {
   self?: boolean;
 }
 
-const META: Record<number, { label: string; color: string; border: string; glow: string; delay: number; height: string }> = {
-  1: { label: "1ST", color: "text-accent-yellow", border: "border-accent-yellow", glow: "shadow-[0_0_24px_rgba(255,210,63,0.18)]", delay: 500, height: "min-h-[210px]" },
-  2: { label: "2ND", color: "text-[#D6D9E0]", border: "border-border-strong", glow: "", delay: 250, height: "min-h-[180px]" },
-  3: { label: "3RD", color: "text-[#E09A5B]", border: "border-border-strong", glow: "", delay: 0, height: "min-h-[180px]" },
+// Pipe height is set by rank (px on desktop, scaled down on phones via CSS).
+const META: Record<
+  number,
+  { label: string; color: string; pipeH: number; delay: number; character: CharacterKey; anim: string }
+> = {
+  1: { label: "1ST", color: "text-accent-yellow", pipeH: 250, delay: 600, character: "mario", anim: "char-celebrate" },
+  2: { label: "2ND", color: "text-[#D6D9E0]", pipeH: 180, delay: 300, character: "luigi", anim: "char-celebrate" },
+  3: { label: "3RD", color: "text-[#E09A5B]", pipeH: 120, delay: 0, character: "peach", anim: "char-float" },
 };
+const GROW_MS = 1100;
 
 function useCountUp(target: number, delay: number, duration = 900) {
   const [value, setValue] = useState(0);
@@ -27,7 +33,7 @@ function useCountUp(target: number, delay: number, duration = 900) {
         if (t < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
-    }, delay + 300);
+    }, delay);
     return () => {
       clearTimeout(timer);
       cancelAnimationFrame(raf);
@@ -36,36 +42,72 @@ function useCountUp(target: number, delay: number, duration = 900) {
   return value;
 }
 
-function PodiumBlock({ p }: { p: Entry }) {
+function PodiumColumn({ p }: { p: Entry }) {
   const m = META[p.rank];
-  const score = useCountUp(p.total, m.delay);
+  const score = useCountUp(p.total, m.delay + GROW_MS - 300);
   const first = p.rank === 1;
+  const ch = CHARACTERS[m.character];
+  const landAt = m.delay + GROW_MS;
 
   return (
     <div
-      className={cn(
-        "podium-rise flex w-[30%] min-w-[104px] max-w-[200px] flex-col items-center border bg-bg-panel px-2 pb-5 pt-4 text-center sm:px-4",
-        m.border,
-        m.glow,
-        m.height,
-      )}
-      style={{ animationDelay: `${m.delay}ms` }}
+      className="flex w-[30%] min-w-[96px] max-w-[170px] flex-col items-center justify-end"
+      data-rank={p.rank}
     >
-      <span className={cn("mb-1 h-6 text-xl leading-6", !first && "invisible")} aria-hidden="true">
-        <span className="podium-crown inline-block" style={{ animationDelay: `${m.delay + 700}ms` }}>
-          👑
+      {/* Rank, then name + score, above the character */}
+      <div className="relative z-[3] mb-9 flex w-full flex-col items-center text-center">
+        <span className={cn("font-display text-2xl leading-6 sm:text-3xl", m.color)}>
+          {first && (
+            <span className="podium-crown mr-1 inline-block align-middle text-lg" aria-hidden="true" style={{ animationDelay: `${landAt - 200}ms` }}>
+              👑
+            </span>
+          )}
+          {m.label}
         </span>
-      </span>
-      <span className={cn("font-pixel text-xs leading-4 sm:text-sm", m.color)}>{m.label}</span>
-      <span className="mt-3 flex h-10 w-10 items-center justify-center rounded-xs bg-bg-elevated font-mono text-xs font-bold text-text-secondary">
-        {p.id}
-      </span>
-      <span className="mt-2 w-full truncate font-body text-sm font-medium leading-5 text-text-primary">
-        {p.name}
-      </span>
-      <span className="mt-auto pt-3 font-mono text-xl font-bold leading-7 text-accent-yellow font-tnum sm:text-2xl">
-        {score}
-      </span>
+        <span className="mt-1 w-full truncate font-body text-sm font-semibold leading-5 text-text-primary">
+          {p.name}
+        </span>
+        <span className="font-mono text-xl font-bold leading-7 text-accent-yellow font-tnum sm:text-2xl">
+          {score}
+        </span>
+      </div>
+
+      {/* Character standing on the pipe; rides up as the pipe grows, then celebrates */}
+      <div
+        className="relative z-[2] -mb-[7px] w-[64px] sm:w-[84px]"
+        role="img"
+        aria-label={`${ch.label} stands on the ${m.label} place pipe`}
+      >
+        <div
+          className={cn("char-body", m.anim)}
+          style={{ animationDelay: `${landAt}ms`, "--land": `${landAt}ms` } as CSSProperties}
+        >
+          <div className="relative">
+            <PixelSprite rows={ch.frames[0]} palette={ch.palette} className="char-frame-a block w-full" />
+            <PixelSprite
+              rows={ch.frames[1]}
+              palette={ch.palette}
+              className="char-frame-b absolute inset-0 block w-full"
+            />
+            <span className="char-shadow" />
+          </div>
+        </div>
+      </div>
+
+      {/* The pipe: lip + body, growing up from the floor */}
+      <div className="flex w-full flex-col items-center">
+        <div className="pipe-lip w-full" />
+        <div
+          className="pipe-body pipe-grow"
+          style={
+            {
+              "--pipe-h": `${m.pipeH}px`,
+              animationDelay: `${m.delay}ms`,
+              animationDuration: `${GROW_MS}ms`,
+            } as CSSProperties
+          }
+        />
+      </div>
     </div>
   );
 }
@@ -73,10 +115,13 @@ function PodiumBlock({ p }: { p: Entry }) {
 export function Podium({ entries }: { entries: Entry[] }) {
   const [first, second, third] = entries;
   return (
-    <div className="mb-10 flex items-end justify-center gap-2 sm:gap-4" aria-label="Top three players">
-      <PodiumBlock p={second} />
-      <PodiumBlock p={first} />
-      <PodiumBlock p={third} />
+    <div className="mb-6" aria-label="Top three players">
+      <div className="flex items-end justify-center gap-3 sm:gap-6">
+        <PodiumColumn p={second} />
+        <PodiumColumn p={first} />
+        <PodiumColumn p={third} />
+      </div>
+      <div className="pipe-floor mx-auto max-w-[620px]" aria-hidden="true" />
     </div>
   );
 }
