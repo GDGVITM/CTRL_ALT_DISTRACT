@@ -8,6 +8,7 @@ import { LockOverlay } from "./LockOverlay";
 import { DistractionModal } from "./DistractionModal";
 import { RoundTransition } from "./RoundTransition";
 import { StatusBar } from "./StatusBar";
+import { ResizeHandle } from "./ResizeHandle";
 import { DevConsole } from "./DevConsole";
 import { EVENT } from "../../lib/data";
 import { cn } from "../../lib/utils";
@@ -36,6 +37,9 @@ export default function Arena() {
 
   const [transition, setTransition] = useState<{ variant: "clear" | "time-up"; isFinal: boolean } | null>(null);
   const [timerFrozen, setTimerFrozen] = useState(false);
+  const [resultH, setResultH] = useState(240);
+  const [resultCollapsed, setResultCollapsed] = useState(false);
+  const editorColRef = useRef<HTMLDivElement>(null);
   const [mobileTab, setMobileTab] = useState<"PROBLEM" | "CODE" | "RESULTS">("PROBLEM");
 
   const [errorLine, setErrorLine] = useState<number | null>(null);
@@ -118,6 +122,7 @@ export default function Arena() {
   function handleRun(forced: RunResult = "passed") {
     if (busy) return;
     setErrorLine(null);
+    setSubmitResult("idle"); // only the latest action's result is shown
     setRunResult("running");
     setTimeout(() => {
       setRunResult(forced);
@@ -127,6 +132,8 @@ export default function Arena() {
 
   function handleSubmit(outcome: SubmitResult = "accepted") {
     if (busy) return;
+    setErrorLine(null);
+    setRunResult("idle"); // only the latest action's result is shown
     setSubmitResult("submitting");
     setTimeout(() => {
       setSubmitResult(outcome);
@@ -250,7 +257,7 @@ export default function Arena() {
             key={t}
             onClick={() => setMobileTab(t)}
             className={cn(
-              "flex-1 font-label text-[11px] uppercase tracking-wide",
+              "flex-1 font-label text-[16px] uppercase tracking-[0.04em]",
               mobileTab === t ? "bg-bg-elevated text-accent-cyan" : "text-text-muted",
             )}
           >
@@ -281,7 +288,7 @@ export default function Arena() {
             locked && "pointer-events-none",
           )}
         >
-          <div className={cn("flex min-h-0 flex-1 flex-col", locked && "blur-[8px] saturate-[0.6]")}>
+          <div ref={editorColRef} className={cn("flex min-h-0 flex-1 flex-col", locked && "blur-[8px] saturate-[0.6]")}>
             <div className={cn("min-h-0 flex-1", mobileTab === "RESULTS" && "hidden lg:block")}>
               <CodeEditor
                 key={round}
@@ -290,12 +297,27 @@ export default function Arena() {
                 focusLine={focusLine}
               />
             </div>
-            <div className={cn("h-[240px] shrink-0", mobileTab === "RESULTS" && "!h-full lg:!h-[240px]")}>
+            <div
+              className={cn(
+                "relative h-[240px] shrink-0 lg:h-[var(--result-h)]",
+                mobileTab === "RESULTS" && "!h-full lg:!h-[var(--result-h)]",
+              )}
+              style={{ "--result-h": `${resultCollapsed ? 40 : resultH}px` } as React.CSSProperties}
+            >
+              {!resultCollapsed && (
+                <ResizeHandle
+                  containerRef={editorColRef}
+                  height={resultH}
+                  onChange={setResultH}
+                  disabled={locked}
+                />
+              )}
               <ResultPanel
                 runResult={runResult}
                 submitResult={submitResult}
                 onRun={() => handleRun()}
                 onSubmit={() => handleSubmit()}
+                onCollapseChange={setResultCollapsed}
                 compileErrorLine={errorLine ?? 3}
                 onJumpToLine={(line) => {
                   setMobileTab("CODE");
@@ -325,7 +347,7 @@ export default function Arena() {
           className="crt-scanlines fixed inset-0 z-system flex flex-col items-center justify-center bg-black/95 px-4 text-center"
           role="alert"
         >
-          <span className="font-pixel text-xl text-text-primary sm:text-3xl">EVENT ENDED</span>
+          <span className="font-display text-3xl text-text-primary sm:text-5xl">EVENT ENDED</span>
           <p className="mt-4 font-body text-text-secondary">
             The admin has ended the event. Your progress is saved.
           </p>

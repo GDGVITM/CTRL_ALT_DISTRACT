@@ -10,7 +10,7 @@ export function DevConsole({ actions }: { actions: Array<{ label: string; onClic
       {open ? (
         <div className="w-64 border border-accent-cyan/40 bg-bg-elevated p-3 shadow-[0_24px_64px_rgba(0,0,0,0.8)]">
           <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-label text-[10px] uppercase tracking-wide text-accent-cyan">
+            <span className="flex items-center gap-1.5 font-label text-[15px] uppercase tracking-[0.04em] text-accent-cyan">
               <Bug size={12} /> Demo controls
             </span>
             <button onClick={() => setOpen(false)} className="text-text-muted hover:text-text-primary">
