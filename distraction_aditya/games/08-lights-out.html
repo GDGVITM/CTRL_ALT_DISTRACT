@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lights Out</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">💡 Lights Out</h1>
+        <p class="subtitle">Clicking a bulb flips it AND its neighbours. Turn every light OFF in 18 moves.</p>
+        <div class="grid" style="grid-template-columns:repeat(3,1fr);max-width:270px;margin:0 auto;" id="board"></div>
+        <div class="hud" id="hud"></div>
+    </div>
+    <style>
+        .tile {
+            font-size: 34px
+        }
+
+        .tile.lit {
+            background: #ffd166;
+            border-color: #ffd166
+        }
+    </style>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const board = document.getElementById('board'), hud = document.getElementById('hud');
+        let g = Array(9).fill(false), moves = 18, done = false;
+        const rnd = n => Math.floor(Math.random() * n);
+        function press(i) { const x = i % 3, y = (i / 3) | 0;[[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx >= 0 && nx < 3 && ny >= 0 && ny < 3) g[ny * 3 + nx] = !g[ny * 3 + nx] }) }
+        do { g.fill(false); const idx = [...Array(9).keys()].sort(() => Math.random() - .5).slice(0, 3 + rnd(3)); idx.forEach(press) } while (g.every(v => !v));
+        function render() { board.innerHTML = ''; g.forEach((on, i) => { const t = document.createElement('div'); t.className = 'tile' + (on ? ' lit' : ''); t.textContent = on ? '💡' : ''; t.onclick = () => click(i); board.appendChild(t) }); hud.textContent = 'Moves left: ' + moves }
+        function click(i) {
+            if (done) return; press(i); moves--; render();
+            if (g.every(v => !v)) { done = true; hud.textContent = 'All dark! ✓'; DistractionKit.finish('pass') }
+            else if (moves <= 0) { done = true; hud.textContent = 'Out of moves! ✗'; DistractionKit.finish('fail') }
+        }
+        render();
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+    </script>
+</body>
+
+</html>

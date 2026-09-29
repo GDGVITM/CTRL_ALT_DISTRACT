@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bug Hopper</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">🐦 Bug Hopper</h1>
+        <p class="subtitle">SPACE / click to flap. Fly through 6 gaps. Touch a pipe or the edge = fail.</p>
+        <canvas id="c" width="360" height="380"></canvas>
+        <div class="hud" id="hud"></div>
+    </div>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const ctx = document.getElementById('c').getContext('2d'), hud = document.getElementById('hud'), c = document.getElementById('c');
+        const W = 360, H = 380, GRAV = 1300, FLAP = -370, SPEED = 150, GAP = 145, PW = 52, GOAL = 6, bx = 90, br = 12;
+        let bird = { y: H / 2, v: 0 }, pipes = [], passed = 0, spawnT = .6, last = 0, running = false;
+        function flap() { if (running) bird.v = FLAP }
+        document.addEventListener('keydown', e => { if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); flap() } });
+        c.addEventListener('mousedown', flap);
+        function draw() { ctx.fillStyle = '#161622'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#2ee6a6'; pipes.forEach(p => { ctx.fillRect(p.x, 0, PW, p.g); ctx.fillRect(p.x, p.g + GAP, PW, H) }); ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(bx, bird.y, br, 0, 7); ctx.fill(); hud.textContent = 'Gaps passed: ' + passed + ' / ' + GOAL }
+        function end(st) { running = false; hud.textContent = st === 'pass' ? 'Smooth flying! ✓' : 'Crashed! ✗'; DistractionKit.finish(st) }
+        function frame(t) {
+            if (!running) return; const dt = Math.min(.033, (t - last) / 1000); last = t; bird.v += GRAV * dt; bird.y += bird.v * dt; spawnT -= dt;
+            if (spawnT <= 0) { spawnT = 1.7; pipes.push({ x: W, g: 40 + Math.random() * (H - 80 - GAP), p: false }) }
+            pipes.forEach(p => p.x -= SPEED * dt); pipes = pipes.filter(p => p.x > -PW);
+            if (bird.y - br < 0 || bird.y + br > H) { draw(); return end('fail') }
+            for (const p of pipes) {
+                if (bx + br > p.x && bx - br < p.x + PW && (bird.y - br < p.g || bird.y + br > p.g + GAP)) { draw(); return end('fail') }
+                if (!p.p && p.x + PW < bx - br) { p.p = true; passed++; if (passed >= GOAL) { draw(); return end('pass') } }
+            }
+            draw(); requestAnimationFrame(frame)
+        }
+        draw();
+        DistractionKit.setOnTimeout(() => { running = false });
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+        DistractionKit.whenReady(() => { running = true; last = performance.now(); bird.v = FLAP; requestAnimationFrame(frame) });
+    </script>
+</body>
+
+</html>

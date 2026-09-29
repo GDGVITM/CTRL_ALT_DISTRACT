@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Memory Match</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<style>.tile{font-size:28px;}</style>
+</head>
+<body>
+<div class="game-wrap">
+  <div class="timer-bar-track"><div class="timer-bar-fill" id="bar"></div></div>
+  <div class="timer-text" id="timeText"></div>
+  <h1 class="title">🧩 Match the Pairs</h1>
+  <p class="subtitle">Find all 4 pairs. One wrong streak of 3 mismatches = fail.</p>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);max-width:340px;margin:0 auto;" id="board"></div>
+  <div id="progress" style="margin-top:14px;color:var(--text-dim);font-size:13px;"></div>
+</div>
+<script src="../shared/distraction-kit.js"></script>
+<script>
+  const EMOJIS = ['🚀','💡','🔧','🐛'];
+  const deck = [...EMOJIS, ...EMOJIS].sort(() => Math.random()-0.5);
+  const board = document.getElementById('board');
+  const progressEl = document.getElementById('progress');
+  let flipped = [];
+  let matched = 0;
+  let mismatches = 0;
+  const MAX_MISMATCH = 3;
+  let locked = false;
+
+  deck.forEach((emoji, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.emoji = emoji;
+    tile.dataset.i = i;
+    tile.textContent = '❔';
+    tile.addEventListener('click', () => flip(tile));
+    board.appendChild(tile);
+  });
+
+  function flip(tile) {
+    if (locked || tile.classList.contains('correct') || flipped.includes(tile)) return;
+    tile.textContent = tile.dataset.emoji;
+    flipped.push(tile);
+    if (flipped.length === 2) {
+      locked = true;
+      setTimeout(checkMatch, 500);
+    }
+  }
+
+  function checkMatch() {
+    const [a,b] = flipped;
+    if (a.dataset.emoji === b.dataset.emoji) {
+      a.classList.add('correct'); b.classList.add('correct');
+      matched++;
+      if (matched === EMOJIS.length) {
+        progressEl.textContent = 'All matched! ✓';
+        DistractionKit.finish('pass');
+        return;
+      }
+    } else {
+      a.textContent = '❔'; b.textContent = '❔';
+      mismatches++;
+      if (mismatches >= MAX_MISMATCH) {
+        progressEl.textContent = 'Too many mismatches! ✗';
+        DistractionKit.finish('fail');
+        return;
+      }
+    }
+    flipped = [];
+    locked = false;
+    progressEl.textContent = `Pairs: ${matched}/${EMOJIS.length}  |  Misses: ${mismatches}/${MAX_MISMATCH}`;
+  }
+
+  DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+  progressEl.textContent = `Pairs: 0/${EMOJIS.length}  |  Misses: 0/${MAX_MISMATCH}`;
+</script>
+</body>
+</html>

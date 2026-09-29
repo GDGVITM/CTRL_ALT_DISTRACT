@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Trivia Quickfire</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+  <div class="game-wrap">
+    <div class="timer-bar-track">
+      <div class="timer-bar-fill" id="bar"></div>
+    </div>
+    <div class="timer-text" id="timeText"></div>
+    <h1 class="title">❓ Quickfire Trivia</h1>
+    <p class="subtitle">Answer 2 rapid-fire tech questions correctly.</p>
+    <div id="q" style="font-size:19px;font-weight:600;margin-bottom:16px;min-height:50px;"></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;" id="opts"></div>
+    <div id="progress" style="margin-top:14px;color:var(--text-dim);font-size:13px;"></div>
+  </div>
+  <script src="../shared/distraction-kit.js"></script>
+  <script>
+    const BANK = [
+      { q: 'What does HTTP stand for?', opts: ['HyperText Transfer Protocol', 'High Transfer Text Process', 'Host Transfer Text Protocol', 'HyperText Type Process'], a: 0 },
+      { q: 'Which is NOT a programming language?', opts: ['Python', 'Java', 'HTML', 'Kotlin'], a: 2 },
+      { q: 'What does CPU stand for?', opts: ['Central Process Unit', 'Central Processing Unit', 'Computer Personal Unit', 'Core Processing Unit'], a: 1 },
+      { q: 'Big-O of binary search?', opts: ['O(n)', 'O(log n)', 'O(n^2)', 'O(1)'], a: 1 },
+      { q: 'What does SQL stand for?', opts: ['Structured Query Language', 'Simple Query Logic', 'Sequential Query Language', 'Structured Question Language'], a: 0 },
+      { q: 'Which is a version control system?', opts: ['Docker', 'Git', 'Kafka', 'Redis'], a: 1 },
+    ];
+    const pool = [...BANK].sort(() => Math.random() - 0.5).slice(0, 2);
+    let idx = 0;
+
+    const qEl = document.getElementById('q');
+    const optsEl = document.getElementById('opts');
+    const progressEl = document.getElementById('progress');
+
+    function render() {
+      const item = pool[idx];
+      qEl.textContent = item.q;
+      optsEl.innerHTML = '';
+      item.opts.forEach((opt, i) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.fontSize = '13px';
+        tile.style.padding = '8px';
+        tile.textContent = opt;
+        tile.addEventListener('click', () => choose(i === item.a));
+        optsEl.appendChild(tile);
+      });
+      progressEl.textContent = `${idx}/${pool.length}`;
+    }
+
+    function choose(correct) {
+      if (correct) {
+        idx++;
+        if (idx === pool.length) {
+          progressEl.textContent = 'Correct! ✓';
+          DistractionKit.finish('pass');
+        } else {
+          render();
+        }
+      } else {
+        progressEl.textContent = 'Wrong! ✗';
+        DistractionKit.finish('fail');
+      }
+    }
+
+    DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+    render();
+  </script>
+</body>
+
+</html>

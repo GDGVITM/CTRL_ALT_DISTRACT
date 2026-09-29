@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Brick Breaker</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">🧱 Brick Breaker</h1>
+        <p class="subtitle">Mouse or ←/→ moves the paddle. Clear all bricks. 3 lives.</p>
+        <canvas id="c" width="360" height="380" style="cursor:none"></canvas>
+        <div class="hud" id="hud"></div>
+    </div>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const c = document.getElementById('c'), ctx = c.getContext('2d'), hud = document.getElementById('hud');
+        const W = 360, H = 380, PW = 72, PY = H - 28, BR = 6, COLS = 6, ROWS = 3;
+        let px = W / 2, ball, lives = 3, bricks = [], last = 0, running = false, keys = {}, left = COLS * ROWS;
+        const bw = (W - 30) / COLS, cols = ['#ff5c7c', '#ffd166', '#22e2c8'];
+        for (let r = 0; r < ROWS; r++)for (let k = 0; k < COLS; k++)bricks.push({ x: 15 + k * bw, y: 40 + r * 24, w: bw - 4, h: 16, a: true, col: cols[r] });
+        function reset() { ball = { x: px, y: PY - BR - 2, vx: (Math.random() < .5 ? -1 : 1) * 140, vy: -240 } }
+        c.addEventListener('mousemove', e => { const r = c.getBoundingClientRect(); px = (e.clientX - r.left) * W / r.width });
+        document.addEventListener('keydown', e => { keys[e.key] = true; if (e.key.startsWith('Arrow')) e.preventDefault() });
+        document.addEventListener('keyup', e => keys[e.key] = false);
+        function draw() { ctx.fillStyle = '#161622'; ctx.fillRect(0, 0, W, H); bricks.forEach(b => { if (b.a) { ctx.fillStyle = b.col; ctx.fillRect(b.x, b.y, b.w, b.h) } }); ctx.fillStyle = '#7c5cff'; ctx.fillRect(px - PW / 2, PY, PW, 10); ctx.fillStyle = '#f2f2f7'; ctx.beginPath(); ctx.arc(ball.x, ball.y, BR, 0, 7); ctx.fill(); hud.textContent = 'Bricks left: ' + left + '  |  Lives: ' + lives }
+        function end(st) { running = false; hud.textContent = st === 'pass' ? 'Cleared! ✓' : 'Out of lives! ✗'; DistractionKit.finish(st) }
+        function frame(t) {
+            if (!running) return; const dt = Math.min(.033, (t - last) / 1000); last = t;
+            if (keys.ArrowLeft) px -= 320 * dt; if (keys.ArrowRight) px += 320 * dt; px = Math.max(PW / 2, Math.min(W - PW / 2, px));
+            ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+            if (ball.x < BR) { ball.x = BR; ball.vx = Math.abs(ball.vx) } if (ball.x > W - BR) { ball.x = W - BR; ball.vx = -Math.abs(ball.vx) } if (ball.y < BR) { ball.y = BR; ball.vy = Math.abs(ball.vy) }
+            if (ball.vy > 0 && ball.y + BR >= PY && ball.y + BR <= PY + 14 && ball.x >= px - PW / 2 - BR && ball.x <= px + PW / 2 + BR) { ball.vy = -Math.abs(ball.vy); ball.vx = (ball.x - px) / (PW / 2) * 260 }
+            for (const b of bricks) { if (b.a && ball.x + BR > b.x && ball.x - BR < b.x + b.w && ball.y + BR > b.y && ball.y - BR < b.y + b.h) { b.a = false; ball.vy = -ball.vy; left--; break } }
+            if (left === 0) { draw(); return end('pass') }
+            if (ball.y > H + BR) { lives--; if (!lives) { draw(); return end('fail') } reset() }
+            draw(); requestAnimationFrame(frame)
+        }
+        reset(); draw();
+        DistractionKit.setOnTimeout(() => { running = false });
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+        DistractionKit.whenReady(() => { running = true; last = performance.now(); requestAnimationFrame(frame) });
+    </script>
+</body>
+
+</html>

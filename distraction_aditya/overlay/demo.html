@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Distraction Module Demo</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<style>
+  body { flex-direction: column; }
+  .game-list { display:flex; flex-direction:column; gap:8px; max-width:420px; margin:20px auto; }
+  .game-btn { background:var(--panel); border:2px solid #2a2a3d; border-radius:10px; padding:12px; cursor:pointer; text-align:left; color:var(--text); }
+  .game-btn:hover { border-color:var(--accent); }
+  #log { max-width:420px; margin:16px auto; font-size:13px; color:var(--text-dim); text-align:left; }
+</style>
+</head>
+<body>
+<div class="game-wrap" style="max-width:460px;">
+  <h1 class="title">🎮 Ctrl Alt One — Distraction Demo</h1>
+  <p class="subtitle">Click any game to launch it exactly like the real app would (fullscreen, unskippable).</p>
+  <div class="game-list" id="list"></div>
+  <div id="log"></div>
+</div>
+<script src="distraction-overlay.js"></script>
+<script>
+  const games = [
+    ['../games/01-snake.html', 'Snake Sprint'],
+    ['../games/02-bug-hopper.html', 'Bug Hopper'],
+    ['../games/03-bug-storm.html', 'Bug Storm'],
+    ['../games/04-brick-breaker.html', 'Brick Breaker'],
+    ['../games/05-maze-runner.html', 'Maze Runner'],
+    ['../games/06-whack-a-mole.html', 'Whack the Bug'],
+    ['../games/07-emoji-memory.html', 'Memory Match'],
+    ['../games/08-lights-out.html', 'Lights Out'],
+    ['../games/09-trivia-quickfire.html', 'Quickfire Trivia'],
+    ['../games/10-code-rain.html', 'Code Rain'],
+  ];
+  const list = document.getElementById('list');
+  const log = document.getElementById('log');
+
+  games.forEach(([url, name]) => {
+    const btn = document.createElement('div');
+    btn.className = 'game-btn';
+    btn.textContent = name;
+    btn.addEventListener('click', async () => {
+      log.textContent = 'Launching: ' + name + '...';
+      const result = await DistractionOverlay.launch(url, { duration: 150 });
+      log.textContent = `${name} -> ${result.status.toUpperCase()} (took ${result.timeTakenMs ? Math.round(result.timeTakenMs/1000)+'s' : 'timeout'})`;
+    });
+    list.appendChild(btn);
+  });
+</script>
+</body>
+</html>

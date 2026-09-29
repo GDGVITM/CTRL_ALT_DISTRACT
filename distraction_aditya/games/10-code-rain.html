@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Code Rain</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">⌨️ Code Rain</h1>
+        <p class="subtitle">Type the falling words before they hit the bottom. Clear 6. Miss 3 = fail.</p>
+        <canvas id="c" width="400" height="360"></canvas>
+        <div class="hud" id="hud"></div>
+    </div>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const ctx = document.getElementById('c').getContext('2d'), hud = document.getElementById('hud');
+        const WORDS = ['for', 'while', 'array', 'stack', 'queue', 'bug', 'null', 'loop', 'push', 'pop', 'node', 'hash', 'tree', 'graph', 'class', 'int', 'void', 'sort', 'swap', 'heap'];
+        const W = 400, H = 360, GOAL = 6, MAXMISS = 2, rnd = n => Math.floor(Math.random() * n);
+        let words = [], buf = '', cleared = 0, missed = 0, spawnT = .3, last = 0, running = false;
+        ctx.font = 'bold 20px monospace';
+        function spawn() { const used = new Set(words.map(w => w.t[0])), pool = WORDS.filter(w => !used.has(w[0])); if (!pool.length) return; const t = pool[rnd(pool.length)]; words.push({ t, x: 10 + Math.random() * (W - ctx.measureText(t).width - 20), y: 0, v: 34 + cleared * 5 }) }
+        function draw() {
+            ctx.fillStyle = '#161622'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ff5c7c'; ctx.fillRect(0, H - 4, W, 4); ctx.font = 'bold 20px monospace';
+            words.forEach(w => { const hit = buf && w.t.startsWith(buf); ctx.fillStyle = hit ? '#22e2c8' : '#f2f2f7'; ctx.fillText(w.t.slice(0, hit ? buf.length : 0), w.x, w.y); const pw = hit ? ctx.measureText(buf).width : 0; ctx.fillStyle = '#f2f2f7'; ctx.fillText(w.t.slice(hit ? buf.length : 0), w.x + pw, w.y) });
+            hud.textContent = 'Cleared: ' + cleared + ' / ' + GOAL + '   |   Missed: ' + missed + ' / ' + (MAXMISS + 1) + '   |   typing: ' + buf
+        }
+        function end(st) { running = false; hud.textContent = st === 'pass' ? 'Fast fingers! ✓' : 'Too many missed! ✗'; DistractionKit.finish(st) }
+        document.addEventListener('keydown', e => {
+            if (!running) return; if (e.key === 'Backspace') { buf = ''; return } if (!/^[a-z]$/i.test(e.key)) return;
+            buf += e.key.toLowerCase(); let m = words.find(w => w.t.startsWith(buf));
+            if (!m) { buf = e.key.toLowerCase(); m = words.find(w => w.t.startsWith(buf)); if (!m) buf = '' }
+            if (m && m.t === buf) { words = words.filter(w => w !== m); buf = ''; cleared++; if (cleared >= GOAL) { draw(); end('pass') } }
+        });
+        function frame(t) {
+            if (!running) return; const dt = Math.min(.033, (t - last) / 1000); last = t;
+            spawnT -= dt; if (spawnT <= 0) { spawnT = 1.6 - Math.min(.6, cleared * .1); spawn() }
+            words.forEach(w => w.y += w.v * dt); const gone = words.filter(w => w.y > H - 8);
+            if (gone.length) { missed += gone.length; words = words.filter(w => w.y <= H - 8); buf = ''; if (missed > MAXMISS) { draw(); return end('fail') } }
+            draw(); requestAnimationFrame(frame)
+        }
+        draw();
+        DistractionKit.setOnTimeout(() => { running = false });
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+        DistractionKit.whenReady(() => { running = true; last = performance.now(); requestAnimationFrame(frame) });
+    </script>
+</body>
+
+</html>

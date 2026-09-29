@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Maze Runner</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">🧭 Maze Runner</h1>
+        <p class="subtitle">Arrow keys / WASD. Reach the green square in the bottom-right corner. New maze every time.
+        </p>
+        <canvas id="c" width="364" height="364"></canvas>
+        <div class="hud" id="hud"></div>
+    </div>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const ctx = document.getElementById('c').getContext('2d'), hud = document.getElementById('hud');
+        const N = 8, S = 45, DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], rnd = n => Math.floor(Math.random() * n);
+        const cells = Array.from({ length: N * N }, () => ({ w: [1, 1, 1, 1], v: 0 }));
+        (function () {
+            const st = [0]; cells[0].v = 1; while (st.length) {
+                const i = st[st.length - 1], x = i % N, y = (i / N) | 0, nb = [];
+                for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d]; if (nx >= 0 && ny >= 0 && nx < N && ny < N && !cells[ny * N + nx].v) nb.push(d) }
+                if (!nb.length) { st.pop(); continue } const d = nb[rnd(nb.length)], j = (y + DY[d]) * N + x + DX[d]; cells[i].w[d] = 0; cells[j].w[(d + 2) % 4] = 0; cells[j].v = 1; st.push(j)
+            }
+        })();
+        let px = 0, py = 0, running = false, moves = 0;
+        function draw() {
+            ctx.clearRect(0, 0, 364, 364); ctx.save(); ctx.translate(2, 2); ctx.fillStyle = 'rgba(46,230,166,.4)'; ctx.fillRect((N - 1) * S + 3, (N - 1) * S + 3, S - 6, S - 6);
+            ctx.strokeStyle = '#7c5cff'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath();
+            for (let y = 0; y < N; y++)for (let x = 0; x < N; x++) { const w = cells[y * N + x].w, X = x * S, Y = y * S; if (w[0]) { ctx.moveTo(X, Y); ctx.lineTo(X + S, Y) } if (w[1]) { ctx.moveTo(X + S, Y); ctx.lineTo(X + S, Y + S) } if (w[2]) { ctx.moveTo(X, Y + S); ctx.lineTo(X + S, Y + S) } if (w[3]) { ctx.moveTo(X, Y); ctx.lineTo(X, Y + S) } }
+            ctx.stroke(); ctx.fillStyle = '#22e2c8'; ctx.beginPath(); ctx.arc(px * S + S / 2, py * S + S / 2, S / 3, 0, 7); ctx.fill(); ctx.restore(); hud.textContent = 'Moves: ' + moves
+        }
+        const KM = { ArrowUp: 0, w: 0, ArrowRight: 1, d: 1, ArrowDown: 2, s: 2, ArrowLeft: 3, a: 3 };
+        document.addEventListener('keydown', e => {
+            const d = KM[e.key]; if (d === undefined) return; e.preventDefault(); if (!running) return;
+            if (!cells[py * N + px].w[d]) { px += DX[d]; py += DY[d]; moves++; draw(); if (px === N - 1 && py === N - 1) { running = false; hud.textContent = 'Escaped in ' + moves + ' moves! ✓'; DistractionKit.finish('pass') } }
+        });
+        draw();
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+        DistractionKit.whenReady(() => { running = true });
+    </script>
+</body>
+
+</html>

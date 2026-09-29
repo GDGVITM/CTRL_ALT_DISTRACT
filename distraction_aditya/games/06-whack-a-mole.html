@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Whack It</title>
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<div class="game-wrap">
+  <div class="timer-bar-track"><div class="timer-bar-fill" id="bar"></div></div>
+  <div class="timer-text" id="timeText"></div>
+  <h1 class="title">🔨 Whack the Bug</h1>
+  <p class="subtitle">Click the 🐛 as it appears. Get 5 hits before it escapes 4 times.</p>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);max-width:320px;margin:0 auto;" id="board"></div>
+  <div id="progress" style="margin-top:14px;color:var(--text-dim);font-size:13px;"></div>
+</div>
+<script src="../shared/distraction-kit.js"></script>
+<script>
+  const board = document.getElementById('board');
+  const progressEl = document.getElementById('progress');
+  const CELLS = 9;
+  const HITS_NEEDED = 5;
+  const MISSES_ALLOWED = 4;
+  let hits = 0, misses = 0, activeCell = null, roundTimer;
+
+  for (let i=0;i<CELLS;i++) {
+    const cell = document.createElement('div');
+    cell.className = 'tile';
+    cell.dataset.i = i;
+    board.appendChild(cell);
+  }
+  const cells = [...board.children];
+
+  function popBug() {
+    if (activeCell) activeCell.textContent = '';
+    const idx = Math.floor(Math.random()*CELLS);
+    activeCell = cells[idx];
+    activeCell.textContent = '🐛';
+    clearTimeout(roundTimer);
+    roundTimer = setTimeout(() => {
+      // missed it
+      activeCell.textContent = '';
+      misses++;
+      updateProgress();
+      if (misses >= MISSES_ALLOWED) {
+        DistractionKit.finish('fail');
+        return;
+      }
+      popBug();
+    }, 750);
+  }
+
+  cells.forEach(c => c.addEventListener('click', () => {
+    if (c.textContent === '🐛') {
+      c.textContent = '';
+      hits++;
+      updateProgress();
+      if (hits >= HITS_NEEDED) {
+        clearTimeout(roundTimer);
+        DistractionKit.finish('pass');
+        return;
+      }
+      popBug();
+    }
+  }));
+
+  function updateProgress() {
+    progressEl.textContent = `Hits: ${hits}/${HITS_NEEDED}  |  Misses: ${misses}/${MISSES_ALLOWED}`;
+  }
+
+  DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+  updateProgress();
+  popBug();
+</script>
+</body>
+</html>

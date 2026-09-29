@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bug Storm</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+
+<body>
+    <div class="game-wrap">
+        <div class="timer-bar-track">
+            <div class="timer-bar-fill" id="bar"></div>
+        </div>
+        <div class="timer-text" id="timeText"></div>
+        <h1 class="title">☄️ Bug Storm</h1>
+        <p class="subtitle">Move with mouse or arrow keys. Survive 15 seconds. One hit = fail.</p>
+        <canvas id="c" width="360" height="360" style="cursor:none"></canvas>
+        <div class="hud" id="hud"></div>
+    </div>
+    <script src="../shared/distraction-kit.js"></script>
+    <script>
+        const c = document.getElementById('c'), ctx = c.getContext('2d'), hud = document.getElementById('hud');
+        const W = 360, H = 360, DUR = 15, R = 9;
+        let px = W / 2, py = H - 60, obs = [], t = 0, spawn = 0, last = 0, running = false, keys = {};
+        c.addEventListener('mousemove', e => { const r = c.getBoundingClientRect(); px = (e.clientX - r.left) * W / r.width; py = (e.clientY - r.top) * H / r.height });
+        document.addEventListener('keydown', e => { keys[e.key] = true; if (e.key.startsWith('Arrow')) e.preventDefault() });
+        document.addEventListener('keyup', e => keys[e.key] = false);
+        function draw() { ctx.fillStyle = '#161622'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ff5c7c'; obs.forEach(o => { ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill() }); ctx.fillStyle = '#22e2c8'; ctx.beginPath(); ctx.arc(px, py, R, 0, 7); ctx.fill(); ctx.fillStyle = '#7c5cff'; ctx.fillRect(0, H - 6, W * Math.min(1, t / DUR), 6); hud.textContent = 'Survive: ' + Math.max(0, DUR - t).toFixed(1) + 's' }
+        function end(st) { running = false; hud.textContent = st === 'pass' ? 'Survived! ✓' : 'Hit! ✗'; DistractionKit.finish(st) }
+        function frame(ts) {
+            if (!running) return; const dt = Math.min(.033, (ts - last) / 1000); last = ts; t += dt;
+            const sp = 240 * dt; if (keys.ArrowLeft || keys.a) px -= sp; if (keys.ArrowRight || keys.d) px += sp; if (keys.ArrowUp || keys.w) py -= sp; if (keys.ArrowDown || keys.s) py += sp;
+            px = Math.max(R, Math.min(W - R, px)); py = Math.max(R, Math.min(H - R, py));
+            spawn -= dt; if (spawn <= 0) { spawn = Math.max(.15, .45 - t * .02); const r = 6 + Math.random() * 10; obs.push({ x: Math.random() * W, y: -r, r, v: 110 + Math.random() * 90 + t * 8 }) }
+            obs.forEach(o => o.y += o.v * dt); obs = obs.filter(o => o.y < H + 30);
+            if (obs.some(o => Math.hypot(o.x - px, o.y - py) < o.r + R - 2)) { draw(); return end('fail') }
+            if (t >= DUR) { draw(); return end('pass') }
+            draw(); requestAnimationFrame(frame)
+        }
+        draw();
+        DistractionKit.setOnTimeout(() => { running = false });
+        DistractionKit.startTimer(document.getElementById('bar'), document.getElementById('timeText'));
+        DistractionKit.whenReady(() => { running = true; last = performance.now(); requestAnimationFrame(frame) });
+    </script>
+</body>
+
+</html>
