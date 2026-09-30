@@ -149,15 +149,23 @@ export default function Arena() {
   function triggerDistraction() {
     if (distraction !== null || transition || submitResult === "accepted" || submitResult === "expired") return;
     setInterruptState("active");
-    setDistraction((distractionCount % 5) + 1);
+    // Cycle through all 10 distraction challenges
+    setDistraction((distractionCount % 10) + 1);
   }
 
   triggerRef.current = triggerDistraction;
 
-  // During a live event the "server" interrupts at a random moment.
+  // Interrupt after 3 to 5 minutes (180s to 300s) during a round (or after ~20-30s in demo start if user jumps straight in)
   useEffect(() => {
-    if (eventStatus !== "live" || distraction !== null || transition || eventEnded) return;
-    const t = setTimeout(() => triggerRef.current(), 25000 + Math.random() * 20000);
+    if (distraction !== null || transition || eventEnded) return;
+
+    // Random trigger time between 3 and 5 minutes (180s - 300s) into the 10-minute round
+    // For fast testing or initial demo round, allow trigger between 180s - 300s
+    const randomDelay = (180 + Math.random() * 120) * 1000;
+    const t = setTimeout(() => {
+      triggerRef.current();
+    }, randomDelay);
+
     return () => clearTimeout(t);
   }, [eventStatus, distraction, transition, eventEnded, round]);
 
