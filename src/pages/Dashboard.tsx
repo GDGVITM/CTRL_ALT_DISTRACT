@@ -5,9 +5,10 @@ import { Lock, X } from "lucide-react";
 import { AppHeader, type EventBadgeState } from "../components/headers/AppHeader";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { Rulebook } from "../components/Rulebook";
-import { EVENT, PLAYER } from "../lib/data";
+import { EVENT } from "../lib/data";
 import { cn } from "../lib/utils";
 import { useEventState } from "../lib/eventStore";
+import { useAuth } from "../context/AuthContext";
 
 type DashState = "not-joined" | "joined" | "waiting" | "live" | "ended" | "finished";
 
@@ -51,6 +52,7 @@ const STATE_META: Record<
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { firstName, user } = useAuth();
   const [state, setState] = useState<DashState>("not-joined");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -85,6 +87,8 @@ export default function Dashboard() {
     }, 700);
   };
 
+  const playerId = user?.id ? `CAD-${user.id.slice(0, 6).toUpperCase()}` : "CAD-0142";
+
   return (
     <div className="min-h-screen bg-bg-canvas isolate">
       <ArcadeSides contentMax={1280} />
@@ -92,10 +96,10 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-[1280px] px-4 py-10 pb-24 sm:px-8 lg:pb-10">
         <h1 className="font-display text-5xl text-text-primary sm:text-6xl">
-          Hi, {PLAYER.firstName}.
+          Hi, {firstName}.
         </h1>
         <p className="mt-1 font-body text-sm text-text-muted">
-          Player ID {PLAYER.playerId} · {EVENT.collegeName}
+          Player ID {playerId} · {EVENT.collegeName}
         </p>
 
         {/* dev state switcher */}

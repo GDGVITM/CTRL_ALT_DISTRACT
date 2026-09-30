@@ -4,8 +4,11 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "../Logo";
 import { Button } from "../ui/Button";
 import { cn } from "../../lib/utils";
+import { useAuth } from "../../context/AuthContext";
 
-export function PublicHeader({ signedIn = false }: { signedIn?: boolean }) {
+export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
+  const { user } = useAuth();
+  const isAuth = signedIn !== undefined ? signedIn : !!user;
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,27 +34,37 @@ export function PublicHeader({ signedIn = false }: { signedIn?: boolean }) {
       )}
     >
       <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
-        <Link to="/login">
+        <Link to={isAuth ? "/dashboard" : "/login"}>
           <Logo size={26} />
         </Link>
         <nav className="hidden items-center gap-8 lg:flex">
+          {isAuth && (
+            <NavLink to="/dashboard" className={navLinkClass}>
+              Dashboard
+            </NavLink>
+          )}
           <NavLink to="/rules" className={navLinkClass}>
             Rules
           </NavLink>
+          {isAuth && (
+            <NavLink to="/leaderboard" className={navLinkClass}>
+              Leaderboard
+            </NavLink>
+          )}
         </nav>
         <div className="hidden items-center gap-3 lg:flex">
-          {signedIn ? (
+          {isAuth ? (
             <Button to="/dashboard" variant="secondary" size="sm">
-                Dashboard
-              </Button>
+              Dashboard
+            </Button>
           ) : (
             <Button to="/login" variant="secondary" size="sm">
-                Log in
-              </Button>
-          )}
-          <Button to={signedIn ? "/dashboard" : "/login"} variant="primary" size="sm" chamfer>
-              Enter the arena
+              Log in
             </Button>
+          )}
+          <Button to={isAuth ? "/dashboard" : "/login"} variant="primary" size="sm" chamfer>
+            Enter the arena
+          </Button>
         </div>
         <button
           className="flex h-11 w-11 items-center justify-center text-text-primary lg:hidden"

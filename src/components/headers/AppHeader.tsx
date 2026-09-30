@@ -3,9 +3,8 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { Logo } from "../Logo";
 import { StatusBadge } from "../ui/Badge";
-import { PLAYER } from "../../lib/data";
 import { cn } from "../../lib/utils";
-import { signOut } from "../../lib/auth";
+import { useAuth } from "../../context/AuthContext";
 
 export type EventBadgeState = "upcoming" | "joined" | "waiting" | "live" | "ended" | "finished";
 
@@ -24,9 +23,10 @@ const badgeConfig: Record<
 export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeState }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { fullName, initials, signOut } = useAuth();
 
-  const logOut = () => {
-    signOut();
+  const logOut = async () => {
+    await signOut();
     navigate("/login", { replace: true });
   };
   const badge = badgeConfig[eventState];
@@ -66,10 +66,10 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
               className="flex items-center gap-2 rounded-sm py-1.5 pl-1.5 pr-2 hover:bg-bg-hover"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-xs bg-accent-cyan/15 font-mono text-xs font-bold text-accent-cyan">
-                {PLAYER.initials}
+                {initials}
               </span>
               <span className="hidden font-sans text-sm text-text-primary sm:inline">
-                {PLAYER.fullName}
+                {fullName}
               </span>
               <ChevronDown size={16} className="text-text-muted" />
             </button>

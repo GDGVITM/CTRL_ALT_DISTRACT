@@ -1,8 +1,9 @@
 import { Logo } from "../Logo";
 import { StatusBadge } from "../ui/Badge";
-import { PLAYER } from "../../lib/data";
+import { useAuth } from "../../context/AuthContext";
 
 export function LobbyHeader() {
+  const { initials } = useAuth();
   return (
     <header className="h-16 border-b border-border-hairline bg-bg-canvas">
       <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
@@ -12,7 +13,7 @@ export function LobbyHeader() {
             Lobby
           </StatusBadge>
           <span className="flex h-8 w-8 items-center justify-center rounded-xs bg-accent-cyan/15 font-mono text-xs font-bold text-accent-cyan">
-            {PLAYER.initials}
+            {initials}
           </span>
         </div>
       </div>

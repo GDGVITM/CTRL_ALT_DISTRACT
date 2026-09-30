@@ -143,50 +143,15 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className={cn("mt-6 flex flex-col gap-4", status === "success" && "opacity-60")}>
             {mode === "sign-up" && (
-              <>
-                <TextInput
-                  id="full-name"
-                  label="Full name"
-                  placeholder="Ada Lovelace"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  disabled={status === "submitting"}
-                />
-
-                {/* Role Selector */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-body text-sm font-medium text-text-primary">
-                    Competition Role
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("participant")}
-                      className={cn(
-                        "flex items-center justify-center gap-2 border px-3 py-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-all",
-                        selectedRole === "participant"
-                          ? "border-accent-cyan bg-accent-cyan/15 text-accent-cyan shadow-[0_0_12px_rgba(56,225,255,0.2)]"
-                          : "border-border-default bg-bg-inset text-text-muted hover:border-border-strong"
-                      )}
-                    >
-                      <UserIcon size={14} /> Player
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("admin")}
-                      className={cn(
-                        "flex items-center justify-center gap-2 border px-3 py-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-all",
-                        selectedRole === "admin"
-                          ? "border-accent-magenta bg-accent-magenta/15 text-accent-magenta shadow-[0_0_12px_rgba(255,62,165,0.2)]"
-                          : "border-border-default bg-bg-inset text-text-muted hover:border-border-strong"
-                      )}
-                    >
-                      <Shield size={14} /> Proctor
-                    </button>
-                  </div>
-                </div>
-              </>
+              <TextInput
+                id="full-name"
+                label="Full name"
+                placeholder="Ada Lovelace"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                disabled={status === "submitting"}
+              />
             )}
 
             <TextInput
