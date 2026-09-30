@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Check } from "lucide-react";
+import { Eye, EyeOff, Check, Shield, User as UserIcon } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { TextInput } from "../components/ui/Input";
 import { ArcadeDino } from "../components/ArcadeDino";
 import { cn } from "../lib/utils";
-import { signIn } from "../lib/auth";
+import { supabase, getUserProfile, type UserRole } from "../lib/supabase";
 
 type Mode = "sign-in" | "sign-up";
 type Status = "idle" | "submitting" | "error" | "success";
@@ -18,30 +18,117 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  // Form fields
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("participant");
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
     setErrorMsg("");
-    setTimeout(() => {
-      setStatus("success");
-      signIn();
-      setTimeout(() => navigate("/dashboard"), 400);
-    }, 900);
+
+    try {
+      if (mode === "sign-in") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (error) {
+          setStatus("error");
+          setErrorMsg(error.message);
+          return;
+        }
+
+        if (!data.user) {
+          setStatus("error");
+          setErrorMsg("Login failed. No user record returned.");
+          return;
+        }
+
+        setStatus("success");
+
+        // Resolve user role
+        const profile = await getUserProfile(data.user.id);
+        const resolvedRole = profile?.role || data.user.app_metadata?.role || data.user.user_metadata?.role || "participant";
+
+        setTimeout(() => {
+          if (resolvedRole === "admin") {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
+        }, 500);
+      } else {
+        // Sign-up mode
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              role: selectedRole,
+            },
+          },
+        });
+
+        if (error) {
+          setStatus("error");
+          setErrorMsg(error.message);
+          return;
+        }
+
+        if (!data.user) {
+          setStatus("error");
+          setErrorMsg("Registration failed. Please try again.");
+          return;
+        }
+
+        setStatus("success");
+
+        setTimeout(() => {
+          if (selectedRole === "admin") {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
+        }, 500);
+      }
+    } catch (err: unknown) {
+      console.error("Auth error:", err);
+      setStatus("error");
+      setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
+    }
   };
 
-  const handleDemoFail = () => {
-    setStatus("submitting");
-    setTimeout(() => {
+  const handleGoogleSignIn = async () => {
+    try {
+      setStatus("submitting");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) {
+        setStatus("error");
+        setErrorMsg(error.message);
+      }
+    } catch (err: unknown) {
       setStatus("error");
-      setErrorMsg("Email or password is incorrect. Try again.");
-    }, 900);
+      setErrorMsg(err instanceof Error ? err.message : "Failed to initiate Google sign in.");
+    }
   };
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       {/* Left visual */}
       <div className="crt-grid crt-scanlines relative hidden border-r border-border-hairline bg-bg-canvas p-6 xl:p-10 lg:flex" aria-hidden="true">
-        <div className="flex w-full items-center"><ArcadeDino busy={status === "submitting"} /></div>
+        <div className="flex w-full items-center">
+          <ArcadeDino busy={status === "submitting"} />
+        </div>
       </div>
       <div className="crt-grid relative flex h-40 items-center justify-center border-b border-border-hairline bg-bg-canvas lg:hidden" aria-hidden="true">
         <Logo size={40} wordmark={false} />
@@ -49,17 +136,17 @@ export default function Login() {
 
       {/* Right form */}
       <div className="flex items-center justify-center bg-bg-base px-6 py-12 sm:px-10">
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-[420px]">
           <div className="mb-8 hidden lg:block">
             <Logo size={36} wordmark={false} />
           </div>
 
-          <h1 className="font-display text-4xl text-text-primary sm:text-5xl">
+          <h1 className="font-sans text-3xl font-bold text-text-primary">
             {mode === "sign-in" ? "Welcome, player." : "Create your player."}
           </h1>
           <p className="mt-2 font-body text-text-secondary">
             {mode === "sign-in"
-              ? "Sign in to join Ctrl Alt Distract."
+              ? "Sign in to join Ctrl Alt One."
               : "Set up your profile to enter the arena."}
           </p>
 
@@ -73,17 +160,86 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className={cn("mt-6 flex flex-col gap-5", status === "success" && "opacity-60")}>
+          <form onSubmit={handleSubmit} className={cn("mt-6 flex flex-col gap-4", status === "success" && "opacity-60")}>
             {mode === "sign-up" && (
-              <TextInput label="Full name" placeholder="Your name" required readOnly={status === "submitting"} />
+              <>
+                <TextInput
+                  id="full-name"
+                  label="Full name"
+                  placeholder="Ada Lovelace"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={status === "submitting"}
+                />
+
+                {/* Role Selector */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-body text-sm font-medium text-text-primary">
+                    Competition Role
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole("participant")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 border px-3 py-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-all",
+                        selectedRole === "participant"
+                          ? "border-accent-cyan bg-accent-cyan/15 text-accent-cyan shadow-[0_0_12px_rgba(56,225,255,0.2)]"
+                          : "border-border-default bg-bg-inset text-text-muted hover:border-border-strong"
+                      )}
+                    >
+                      <UserIcon size={14} /> Player
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole("admin")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 border px-3 py-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-all",
+                        selectedRole === "admin"
+                          ? "border-accent-magenta bg-accent-magenta/15 text-accent-magenta shadow-[0_0_12px_rgba(255,62,165,0.2)]"
+                          : "border-border-default bg-bg-inset text-text-muted hover:border-border-strong"
+                      )}
+                    >
+                      <Shield size={14} /> Proctor
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
 
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              fullWidth
+              onClick={handleGoogleSignIn}
+              icon={
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white font-mono text-[11px] font-bold text-black">
+                  G
+                </span>
+              }
+              className="normal-case tracking-normal"
+              disabled={status === "submitting"}
+            >
+              Continue with Google
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border-hairline" />
+              <span className="font-body text-xs text-text-muted">or</span>
+              <span className="h-px flex-1 bg-border-hairline" />
+            </div>
+
             <TextInput
+              id="email-address"
               type="email"
               label="Email"
               placeholder="you@college.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              readOnly={status === "submitting"}
+              disabled={status === "submitting"}
             />
 
             <div>
@@ -92,7 +248,11 @@ export default function Login() {
                   Password
                 </label>
                 {mode === "sign-in" && (
-                  <button type="button" className="font-body text-sm text-accent-cyan hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => alert("Password reset functionality is routed to Supabase Auth.")}
+                    className="font-body text-sm text-accent-cyan hover:underline"
+                  >
                     Forgot password?
                   </button>
                 )}
@@ -101,8 +261,10 @@ export default function Login() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                readOnly={status === "submitting"}
+                disabled={status === "submitting"}
                 trailing={
                   <button
                     type="button"
@@ -126,7 +288,7 @@ export default function Login() {
             >
               {status === "submitting" ? (
                 <span className="flex items-center gap-2">
-                  <PixelSpinner /> Signing in…
+                  <PixelSpinner /> {mode === "sign-in" ? "Signing in…" : "Creating player…"}
                 </span>
               ) : status === "success" ? (
                 <span className="flex items-center gap-2">
@@ -145,7 +307,10 @@ export default function Login() {
                   New here?{" "}
                   <button
                     type="button"
-                    onClick={() => setMode("sign-up")}
+                    onClick={() => {
+                      setMode("sign-up");
+                      setErrorMsg("");
+                    }}
                     className="text-accent-cyan hover:underline"
                   >
                     Create an account
@@ -156,7 +321,10 @@ export default function Login() {
                   Already have an account?{" "}
                   <button
                     type="button"
-                    onClick={() => setMode("sign-in")}
+                    onClick={() => {
+                      setMode("sign-in");
+                      setErrorMsg("");
+                    }}
                     className="text-accent-cyan hover:underline"
                   >
                     Sign in
@@ -164,14 +332,6 @@ export default function Login() {
                 </>
               )}
             </p>
-
-            <button
-              type="button"
-              onClick={handleDemoFail}
-              className="font-body text-xs text-text-muted hover:text-text-secondary"
-            >
-              (demo) preview a failed sign-in
-            </button>
           </form>
 
           <p className="mt-8 font-body text-xs text-text-muted">
