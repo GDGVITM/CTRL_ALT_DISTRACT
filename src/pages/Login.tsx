@@ -291,10 +291,6 @@ export default function Login() {
               )}
             </p>
           </form>
-
-          <p className="mt-8 font-body text-xs text-text-muted">
-            By continuing you agree to the event rules and code of conduct.
-          </p>
         </div>
       </div>
     </div>
