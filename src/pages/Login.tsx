@@ -103,25 +103,6 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setStatus("submitting");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-      if (error) {
-        setStatus("error");
-        setErrorMsg(error.message);
-      }
-    } catch (err: unknown) {
-      setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Failed to initiate Google sign in.");
-    }
-  };
-
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       {/* Left visual */}
@@ -146,7 +127,7 @@ export default function Login() {
           </h1>
           <p className="mt-2 font-body text-text-secondary">
             {mode === "sign-in"
-              ? "Sign in to join Ctrl Alt One."
+              ? "Sign in to join Ctrl Alt Distract."
               : "Set up your profile to enter the arena."}
           </p>
 
@@ -207,29 +188,6 @@ export default function Login() {
                 </div>
               </>
             )}
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={handleGoogleSignIn}
-              icon={
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white font-mono text-[11px] font-bold text-black">
-                  G
-                </span>
-              }
-              className="normal-case tracking-normal"
-              disabled={status === "submitting"}
-            >
-              Continue with Google
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <span className="h-px flex-1 bg-border-hairline" />
-              <span className="font-body text-xs text-text-muted">or</span>
-              <span className="h-px flex-1 bg-border-hairline" />
-            </div>
 
             <TextInput
               id="email-address"

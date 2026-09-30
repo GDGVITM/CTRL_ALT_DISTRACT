@@ -219,7 +219,7 @@ export const Distraction: React.FC<DistractionProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-['Orbitron'] font-black tracking-widest text-cyan-400">
-                    CTRL ALT ONE
+                    CTRL ALT DISTRACT
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-mono font-bold uppercase">
                     CHALLENGE #{String(meta.index).padStart(2, '0')}
