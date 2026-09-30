@@ -239,8 +239,8 @@ export function ArcadeDino({ busy = false }: { busy?: boolean }) {
     <div className="mx-auto w-full max-w-[760px]" aria-hidden="true">
       {/* Marquee */}
       <div className="border border-border-strong bg-bg-elevated px-4 py-4 text-center chamfer">
-        <span className="font-pixel text-base text-accent-yellow sm:text-2xl">
-          CTRL ALT <span className="text-text-primary">ONE</span>
+        <span className="font-pixel text-sm text-accent-yellow sm:text-xl">
+          CTRL ALT <span className="text-text-primary">DISTRACT</span>
         </span>
       </div>
 
@@ -256,7 +256,7 @@ export function ArcadeDino({ busy = false }: { busy?: boolean }) {
             <div className="crt-vignette absolute inset-0 z-[2]" />
             {busy && (
               <div className="absolute inset-0 z-[3] flex items-center justify-center bg-black/60">
-                <span className="animate-blink font-pixel text-sm text-accent-yellow">LOADING…</span>
+                <span className="animate-blink font-display text-lg text-accent-yellow">LOADING…</span>
               </div>
             )}
           </div>
@@ -276,7 +276,7 @@ export function ArcadeDino({ busy = false }: { busy?: boolean }) {
             </span>
           </div>
 
-          <span className="animate-pulse-slow font-label text-xs uppercase tracking-wide text-text-muted">
+          <span className="animate-pulse-slow font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
             Insert coin
           </span>
 

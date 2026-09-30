@@ -14,7 +14,7 @@ function Keycap({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-xs border font-label transition-transform duration-100",
+        "inline-flex items-center justify-center rounded-xs border font-keycap transition-transform duration-100",
         yellow
           ? "bg-accent-yellow border-accent-yellow-deep text-black"
           : "bg-bg-elevated border-border-strong text-text-secondary",
@@ -52,7 +52,7 @@ export function Logo({
       <span className="inline-flex items-center gap-1">
         <Keycap label="CTRL" size={size} />
         <Keycap label="ALT" size={size} />
-        <Keycap label="1" size={size} yellow />
+        <Keycap label="D" size={size} yellow />
       </span>
       {wordmark && (
         <span
@@ -62,7 +62,7 @@ export function Logo({
           )}
           style={{ fontSize: Math.max(9, size * 0.42) }}
         >
-          CTRL ALT ONE
+          CTRL ALT DISTRACT
         </span>
       )}
     </As>
@@ -74,7 +74,7 @@ export function KeycapStand({ size = 48 }: { size?: number }) {
     <div className="inline-flex items-center gap-2">
       <Keycap label="CTRL" size={size} />
       <Keycap label="ALT" size={size} />
-      <Keycap label="1" size={size} yellow />
+      <Keycap label="D" size={size} yellow />
     </div>
   );
 }

@@ -1,6 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap");
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Pixelta";
+  src: url("/fonts/pixelta.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   /* ---- Neutrals ---- */
   --color-bg-canvas: #000000;
@@ -55,7 +63,9 @@
 
   /* ---- Fonts ---- */
   --font-pixel: "Press Start 2P", monospace;
-  --font-label: "Silkscreen", monospace;
+  --font-display: "Pixelta", "Press Start 2P", monospace;
+  --font-label: "Pixelta", monospace;
+  --font-keycap: "Silkscreen", monospace;
   --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
@@ -289,19 +299,10 @@
   }
 }
 
-@keyframes podium-rise {
-  0% { opacity: 0; transform: translateY(48px); }
-  70% { opacity: 1; transform: translateY(-4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
 @keyframes crown-bob {
   0% { transform: translateY(-14px) scale(0.6); opacity: 0; }
   60% { transform: translateY(2px) scale(1.15); opacity: 1; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-.podium-rise {
-  opacity: 0;
-  animation: podium-rise 600ms cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
 }
 .podium-crown {
   opacity: 0;
@@ -315,4 +316,106 @@
 }
 .alert-flash {
   animation: alert-flash 1.6s ease-out;
+}
+
+/* ---- Leaderboard podium: warp-pipe bars that grow up from the floor ---- */
+.pipe-body,
+.pipe-lip {
+  --pipe-bands: linear-gradient(
+    90deg,
+    #052b0b 0 5%,
+    #2f8a1f 5% 15%,
+    #7fd23f 15% 27%,
+    #c4f47a 27% 34%,
+    #4cb52b 34% 68%,
+    #2f8a1f 68% 86%,
+    #145a17 86% 94%,
+    #052b0b 94% 100%
+  );
+  background-image: var(--pipe-bands);
+  image-rendering: pixelated;
+}
+.pipe-lip {
+  height: 30px;
+  margin: 0 -10px;
+  width: calc(100% + 20px) !important;
+  border: 2px solid #052b0b;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1;
+}
+.pipe-body {
+  --eff: var(--pipe-h);
+  width: 84%;
+  height: var(--eff);
+  border-left: 2px solid #052b0b;
+  border-right: 2px solid #052b0b;
+}
+@media (max-width: 639px) {
+  .pipe-body {
+    --eff: calc(var(--pipe-h) * 0.62);
+  }
+}
+@keyframes pipe-grow {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--eff);
+  }
+}
+.pipe-grow {
+  animation: pipe-grow 1100ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+.pipe-floor {
+  height: 10px;
+  border-top: 3px solid #3a3d48;
+  background-image: repeating-linear-gradient(90deg, #12131a 0 14px, #0b0c10 14px 16px);
+}
+
+/* ---- Podium characters ---- */
+.char-body {
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.char-celebrate {
+  animation: char-celebrate 2.4s ease-in-out infinite both;
+}
+.char-float {
+  animation: char-float 1.8s ease-in-out infinite both;
+}
+@keyframes char-celebrate {
+  0%, 60%, 100% { transform: translateY(0) scale(1, 1); }
+  6% { transform: translateY(0) scale(1.12, 0.84); }
+  22% { transform: translateY(-20px) scale(0.94, 1.08); }
+  40% { transform: translateY(0) scale(1.1, 0.88); }
+  46% { transform: translateY(0) scale(1, 1); }
+  52% { transform: translateY(-9px) scale(0.98, 1.03); }
+  58% { transform: translateY(0) scale(1.05, 0.95); }
+}
+@keyframes char-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+/* two-frame pixel animation: arms down / arms up */
+.char-frame-a,
+.char-frame-b {
+  animation-duration: 0.8s;
+  animation-timing-function: steps(1, end);
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-delay: var(--land, 0ms);
+}
+.char-frame-a { animation-name: frame-a; }
+.char-frame-b { animation-name: frame-b; }
+@keyframes frame-a { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes frame-b { 0% { opacity: 0; } 50% { opacity: 1; } }
+.char-shadow {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: -3px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: -1;
 }

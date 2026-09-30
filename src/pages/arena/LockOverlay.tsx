@@ -10,7 +10,7 @@ export function LockOverlay() {
         <div className="flex items-center gap-2 border border-accent-magenta bg-bg-elevated px-3 py-2">
           <Lock size={14} className="text-accent-magenta" />
           <div>
-            <div className="font-label text-[11px] uppercase tracking-wide text-text-primary">
+            <div className="font-label text-[16px] uppercase tracking-[0.04em] text-text-primary">
               Workspace locked
             </div>
             <div className="font-body text-[11px] text-text-secondary">

@@ -31,8 +31,8 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             aria-invalid={!!error}
             aria-describedby={error ? `${inputId}-error` : undefined}
             className={cn(
-              "h-12 w-full rounded-xs border border-border-default bg-[#0d0e12] px-4 font-body text-base text-white placeholder:text-text-muted transition-colors caret-[#38e1ff]",
-              "hover:border-border-strong focus:border-accent-cyan focus:bg-[#12131a] focus:outline-none focus:ring-1 focus:ring-accent-cyan",
+              "h-12 w-full rounded-xs border border-border-default bg-bg-inset px-4 font-body text-base text-text-primary placeholder:text-text-muted transition-colors",
+              "hover:border-border-strong focus:border-accent-cyan focus:outline-none",
               !!leading && "pl-10",
               !!trailing && "pr-11",
               error && "border-danger",

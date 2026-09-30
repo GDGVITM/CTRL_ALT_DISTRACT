@@ -97,7 +97,7 @@ export function Rulebook({ scrollable = true }: { scrollable?: boolean }) {
       </div>
       <div className="lg:col-span-4">
         <div className="sticky top-24 border border-border-default bg-bg-panel p-4">
-          <span className="mb-3 block font-label text-[11px] uppercase tracking-wide text-text-muted">
+          <span className="mb-3 block font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
             Rule index
           </span>
           <ul className="flex flex-col gap-0.5">
