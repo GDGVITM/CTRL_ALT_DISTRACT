@@ -116,16 +116,16 @@ export default function Login() {
       </div>
 
       {/* Right form */}
-      <div className="flex items-center justify-center bg-bg-base px-6 py-12 sm:px-10">
-        <div className="w-full max-w-[420px]">
-          <div className="mb-8 hidden lg:block">
-            <Logo size={36} wordmark={false} />
+      <div className="flex items-center justify-center bg-bg-base px-6 py-8 sm:px-10">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-4 hidden lg:block">
+            <Logo size={32} wordmark={false} />
           </div>
 
-          <h1 className="font-sans text-3xl font-bold text-text-primary">
+          <h1 className="font-sans text-2xl font-bold text-text-primary sm:text-3xl">
             {mode === "sign-in" ? "Welcome, player." : "Create your player."}
           </h1>
-          <p className="mt-2 font-body text-text-secondary">
+          <p className="mt-1 font-body text-xs sm:text-sm text-text-secondary">
             {mode === "sign-in"
               ? "Sign in to join Ctrl Alt Distract."
               : "Set up your profile to enter the arena."}
@@ -134,14 +134,14 @@ export default function Login() {
           {status === "error" && (
             <div
               role="alert"
-              className="mt-6 flex items-start gap-2 border border-danger/40 bg-fill-danger px-4 py-3 font-body text-sm text-danger"
+              className="mt-3 flex items-start gap-2 border border-danger/40 bg-fill-danger px-3 py-2 font-body text-xs text-danger"
             >
               <span>✕</span>
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className={cn("mt-6 flex flex-col gap-4", status === "success" && "opacity-60")}>
+          <form onSubmit={handleSubmit} className={cn("mt-4 flex flex-col gap-3", status === "success" && "opacity-60")}>
             {mode === "sign-up" && (
               <TextInput
                 id="full-name"
@@ -166,15 +166,15 @@ export default function Login() {
             />
 
             <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="password" className="font-body text-sm font-medium text-text-primary">
+              <div className="mb-1 flex items-center justify-between">
+                <label htmlFor="password" className="font-body text-xs sm:text-sm font-medium text-text-primary">
                   Password
                 </label>
                 {mode === "sign-in" && (
                   <button
                     type="button"
                     onClick={() => alert("Password reset functionality is routed to Supabase Auth.")}
-                    className="font-body text-sm text-accent-cyan hover:underline"
+                    className="font-body text-xs text-accent-cyan hover:underline"
                   >
                     Forgot password?
                   </button>
@@ -204,10 +204,10 @@ export default function Login() {
             <Button
               type="submit"
               variant={status === "success" ? undefined : "primary"}
-              size="lg"
+              size="md"
               fullWidth
               disabled={status === "submitting"}
-              className={status === "success" ? "bg-success text-black shadow-none" : undefined}
+              className={cn("mt-1", status === "success" ? "bg-success text-black shadow-none" : undefined)}
             >
               {status === "submitting" ? (
                 <span className="flex items-center gap-2">
@@ -224,7 +224,7 @@ export default function Login() {
               )}
             </Button>
 
-            <p className="text-center font-body text-sm text-text-secondary">
+            <p className="mt-1 text-center font-body text-xs sm:text-sm text-text-secondary">
               {mode === "sign-in" ? (
                 <>
                   New here?{" "}
