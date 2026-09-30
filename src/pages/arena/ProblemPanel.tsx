@@ -20,7 +20,7 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
           <h2 className="font-sans text-xl font-semibold text-text-primary">{PROBLEM.title}</h2>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1 rounded-xs bg-fill-warning px-2 py-0.5 font-label text-[11px] text-warning">
+          <span className="flex items-center gap-1 rounded-xs bg-fill-warning px-2 py-0.5 font-label text-[16px] text-warning">
             ▲ {PROBLEM.difficulty}
           </span>
           <span className="rounded-xs bg-fill-brand px-2 py-0.5 font-mono text-[11px] text-accent-yellow">
@@ -42,7 +42,7 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
             aria-selected={tab === t}
             onClick={() => setTab(t)}
             className={cn(
-              "flex-1 border-b-2 font-label text-[11px] uppercase tracking-wide transition-colors sm:flex-none sm:px-5",
+              "flex-1 border-b-2 font-label text-[16px] uppercase tracking-[0.04em] transition-colors sm:flex-none sm:px-5",
               tab === t
                 ? "border-accent-cyan text-text-primary"
                 : "border-transparent text-text-muted hover:bg-bg-hover hover:text-text-secondary",
@@ -84,7 +84,7 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
                 {PROBLEM.examples.map((ex, i) => (
                   <div key={i} className="border border-border-default bg-bg-inset">
                     <div className="flex items-center justify-between border-b border-border-hairline px-3 py-2">
-                      <span className="font-label text-[11px] uppercase tracking-wide text-text-muted">
+                      <span className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                         Example {i + 1}
                       </span>
                       <button

@@ -12,12 +12,12 @@ export function RoundTransition({
 }) {
   return (
     <div className="crt-scanlines absolute inset-0 z-transition flex flex-col items-center justify-center bg-black/94" role="status" aria-live="assertive">
-      <span className="font-label text-base uppercase tracking-wide text-text-muted">
+      <span className="font-label text-lg uppercase tracking-[0.04em] text-text-muted">
         Round {round.toString().padStart(2, "0")}
       </span>
       <span
         className={cn(
-          "mt-3 font-pixel text-2xl sm:text-4xl",
+          "mt-3 font-display text-4xl sm:text-6xl",
           variant === "clear" ? "text-success" : "text-danger",
         )}
       >
@@ -32,9 +32,9 @@ export function RoundTransition({
       )}
 
       {isFinal ? (
-        <span className="mt-8 font-pixel text-lg text-accent-yellow">FINAL ROUND COMPLETE</span>
+        <span className="mt-8 font-display text-2xl text-accent-yellow">FINAL ROUND COMPLETE</span>
       ) : (
-        <span className="mt-8 flex items-center gap-2 font-label text-sm uppercase tracking-wide text-text-secondary">
+        <span className="mt-8 flex items-center gap-2 font-label text-base uppercase tracking-[0.04em] text-text-secondary">
           Loading round {(round + 1).toString().padStart(2, "0")}
           <span className="flex gap-1">
             {[0, 1, 2].map((i) => (

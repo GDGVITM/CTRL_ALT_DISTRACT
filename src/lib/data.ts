@@ -1,6 +1,6 @@
 export const EVENT = {
-  organizerName: "GDG on Campus Your College",
-  collegeName: "Your College",
+  organizerName: "GDG on Campus Vidyalankar Institute of Technology",
+  collegeName: "Vidyalankar Institute of Technology",
   eventDate: "18 OCT 2026",
   eventTime: "10:00 IST",
   dsaPoints: 100,

@@ -19,6 +19,7 @@ export function ResultPanel({
   onRun,
   onSubmit,
   onJumpToLine,
+  onCollapseChange,
   compileErrorLine = 3,
   disabled,
 }: {
@@ -27,10 +28,14 @@ export function ResultPanel({
   onRun: () => void;
   onSubmit: () => void;
   onJumpToLine?: (line: number) => void;
+  onCollapseChange?: (collapsed: boolean) => void;
   compileErrorLine?: number;
   disabled?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    onCollapseChange?.(collapsed);
+  }, [collapsed, onCollapseChange]);
   const [tab, setTab] = useState<"TESTCASES" | "OUTPUT">("TESTCASES");
   const [selectedCase, setSelectedCase] = useState(0);
 
@@ -71,7 +76,7 @@ export function ResultPanel({
                 setCollapsed(false);
               }}
               className={cn(
-                "h-full border-b-2 px-4 font-label text-[11px] uppercase tracking-wide",
+                "h-full border-b-2 px-4 font-label text-[16px] uppercase tracking-[0.04em]",
                 tab === t
                   ? "border-accent-cyan text-text-primary"
                   : "border-transparent text-text-muted hover:text-text-secondary",
@@ -171,13 +176,13 @@ export function ResultPanel({
                 {showActual && isFail ? (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div className="border border-success/35 bg-fill-success p-2">
-                      <div className="mb-1 font-label text-[10px] uppercase tracking-wide text-success">
+                      <div className="mb-1 font-label text-[15px] uppercase tracking-[0.04em] text-success">
                         Expected
                       </div>
                       <span className="text-text-primary">{current.expected}</span>
                     </div>
                     <div className="border border-danger/40 bg-fill-danger p-2">
-                      <div className="mb-1 font-label text-[10px] uppercase tracking-wide text-danger">
+                      <div className="mb-1 font-label text-[15px] uppercase tracking-[0.04em] text-danger">
                         Your output
                       </div>
                       <span className="text-text-primary">{current.actual}</span>

@@ -1,3 +1,4 @@
+import { ArcadeSides } from "../components/ArcadeSides";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MinimalHeader } from "../components/headers/MinimalHeader";
@@ -48,6 +49,7 @@ export default function Complete() {
 
   return (
     <div className="crt-grid min-h-screen bg-bg-canvas">
+      <ArcadeSides contentMax={800} />
       <div className="crt-vignette pointer-events-none fixed inset-0 -z-10" aria-hidden="true" />
       <MinimalHeader />
       <main className="mx-auto flex max-w-[800px] flex-col items-center px-4 py-16 text-center sm:py-24">
@@ -57,7 +59,7 @@ export default function Complete() {
         </p>
 
         <h1
-          className="mt-6 font-pixel text-2xl text-text-primary transition-opacity duration-300 sm:text-4xl"
+          className="mt-6 font-display text-4xl text-text-primary transition-opacity duration-300 sm:text-6xl"
           style={{ opacity: stage >= 1 ? 1 : 0 }}
         >
           {endedEarly ? "RUN ENDED" : "TASK COMPLETED"}
@@ -70,7 +72,7 @@ export default function Complete() {
         </p>
 
         <div className="mt-10">
-          <span className="font-label text-base uppercase tracking-wide text-text-muted">
+          <span className="font-label text-lg uppercase tracking-[0.04em] text-text-muted">
             Total score
           </span>
           <div className="relative mt-2 font-mono text-6xl font-extrabold text-accent-yellow font-tnum sm:text-8xl">
@@ -90,7 +92,7 @@ export default function Complete() {
             ["Time taken", RESULT.timeTaken, "text-text-primary"],
           ].map(([label, val, color]) => (
             <div key={label} className="border border-border-default bg-bg-panel p-5 chamfer">
-              <div className="font-label text-[11px] uppercase tracking-wide text-text-muted">
+              <div className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                 {label}
               </div>
               <div className={`mt-2 font-mono text-2xl font-bold ${color}`}>{val}</div>
