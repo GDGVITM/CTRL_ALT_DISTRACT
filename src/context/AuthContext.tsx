@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initials = fullName
     .trim()
     .split(/\s+/)
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .filter(Boolean)
     .slice(0, 2)
     .join("")

@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Check, Shield, User as UserIcon } from "lucide-react";
+import { Eye, EyeOff, Check } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { TextInput } from "../components/ui/Input";
 import { ArcadeDino } from "../components/ArcadeDino";
 import { cn } from "../lib/utils";
-import { supabase, getUserProfile, type UserRole } from "../lib/supabase";
+import { supabase, getUserProfile } from "../lib/supabase";
 
 type Mode = "sign-in" | "sign-up";
 type Status = "idle" | "submitting" | "error" | "success";
@@ -22,7 +22,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [selectedRole, setSelectedRole] = useState<UserRole>("participant");
+  const selectedRole = "participant";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -89,11 +89,7 @@ export default function Login() {
         setStatus("success");
 
         setTimeout(() => {
-          if (selectedRole === "admin") {
-            navigate("/admin");
-          } else {
-            navigate("/dashboard");
-          }
+          navigate("/dashboard");
         }, 500);
       }
     } catch (err: unknown) {
