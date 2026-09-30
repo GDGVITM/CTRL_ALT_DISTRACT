@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, Shield } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { Logo } from "../Logo";
 import { StatusBadge } from "../ui/Badge";
-import { PLAYER } from "../../lib/data";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../context/AuthContext";
 
@@ -23,31 +22,14 @@ const badgeConfig: Record<
 
 export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeState }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const badge = badgeConfig[eventState];
-  const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { fullName, initials, signOut } = useAuth();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate("/login");
-    } catch (err) {
-      console.error("Sign out error:", err);
-      navigate("/login");
-    }
+  const logOut = async () => {
+    await signOut();
+    navigate("/login", { replace: true });
   };
-
-  const displayName = profile?.full_name || user?.email?.split("@")[0] || PLAYER.fullName;
-  const initials = profile?.full_name
-    ? profile.full_name
-        .split(" ")
-        .map((p) => p[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : user?.email
-    ? user.email.slice(0, 2).toUpperCase()
-    : PLAYER.initials;
+  const badge = badgeConfig[eventState];
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -57,7 +39,7 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
 
   return (
     <header className="sticky top-0 z-sticky h-16 border-b border-border-hairline bg-bg-canvas sm:h-[72px]">
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between px-4 sm:px-8">
+      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-8">
           <Link to="/dashboard">
             <Logo size={26} />
@@ -72,13 +54,6 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
             <NavLink to="/leaderboard" className={navLinkClass}>
               Leaderboard
             </NavLink>
-            {role === "admin" && (
-              <NavLink to="/admin" className={navLinkClass}>
-                <span className="flex items-center gap-1 text-accent-magenta">
-                  <Shield size={14} /> Admin Console
-                </span>
-              </NavLink>
-            )}
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -94,40 +69,23 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
                 {initials}
               </span>
               <span className="hidden font-sans text-sm text-text-primary sm:inline">
-                {displayName}
+                {fullName}
               </span>
               <ChevronDown size={16} className="text-text-muted" />
             </button>
             {menuOpen && (
               <div
-                className="absolute right-0 top-12 z-dropdown w-52 border border-border-default bg-bg-elevated py-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)]"
+                className="absolute right-0 top-12 z-dropdown w-48 border border-border-default bg-bg-elevated py-1 shadow-[0_24px_64px_rgba(0,0,0,0.8)]"
                 onMouseLeave={() => setMenuOpen(false)}
               >
-                <div className="border-b border-border-hairline px-4 py-2 font-mono text-xs text-text-muted">
-                  <p className="truncate text-text-primary font-sans">{displayName}</p>
-                  <p className="truncate text-[11px] text-text-secondary">{user?.email}</p>
-                  <p className="mt-1 inline-block uppercase text-[10px] tracking-wider text-accent-cyan">
-                    Role: {role}
-                  </p>
-                </div>
-                {role === "admin" && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setMenuOpen(false)}
-                    className="block px-4 py-2.5 font-body text-sm text-accent-magenta hover:bg-bg-hover"
-                  >
-                    Proctor Console
-                  </Link>
-                )}
                 <Link
                   to="/rules"
-                  onClick={() => setMenuOpen(false)}
                   className="block px-4 py-2.5 font-body text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary"
                 >
                   Rulebook
                 </Link>
                 <button
-                  onClick={handleSignOut}
+                  onClick={logOut}
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-left font-body text-sm text-text-secondary hover:bg-bg-hover hover:text-danger"
                 >
                   <LogOut size={14} /> Log out

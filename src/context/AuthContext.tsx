@@ -7,6 +7,9 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   role: UserRole;
+  fullName: string;
+  firstName: string;
+  initials: string;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -79,9 +82,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const role: UserRole = profile?.role || (user?.app_metadata?.role as UserRole) || (user?.user_metadata?.role as UserRole) || "participant";
+  const fullName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player";
+  const firstName = fullName.trim().split(/\s+/)[0] || "Player";
+  const initials = fullName
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "P1";
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        role,
+        fullName,
+        firstName,
+        initials,
+        loading,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

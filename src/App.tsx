@@ -1,6 +1,5 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import Landing from "./pages/Landing";
 import Rules from "./pages/Rules";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -26,13 +25,12 @@ export default function App() {
     <AuthProvider>
       <ScrollToTop />
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/rules" element={<Rules />} />
         <Route path="/login" element={<Login />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
 
-        {/* Authenticated Participant Routes */}
+        {/* Protected Participant Routes */}
         <Route
           path="/dashboard"
           element={

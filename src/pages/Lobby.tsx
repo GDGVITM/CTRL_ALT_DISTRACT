@@ -1,3 +1,4 @@
+import { ArcadeSides } from "../components/ArcadeSides";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -42,14 +43,15 @@ export default function Lobby() {
   }, [countdown, navigate]);
 
   return (
-    <div className="min-h-screen bg-bg-canvas">
+    <div className="min-h-screen bg-bg-canvas isolate">
+      <ArcadeSides contentMax={1280} />
       <LobbyHeader />
 
       <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-8">
         {/* Status panel */}
         <div className="relative flex flex-col items-start justify-between gap-6 border border-border-default bg-bg-panel p-6 chamfer-lg sm:flex-row sm:items-center sm:p-8">
           <div>
-            <span className="flex items-center gap-2 font-label text-base font-bold uppercase tracking-wide text-warning">
+            <span className="flex items-center gap-2 font-label text-lg uppercase tracking-[0.04em] text-warning">
               <span className="inline-block h-2 w-2 animate-pulse-slow rounded-full bg-warning" />
               Waiting for admin
             </span>
@@ -70,7 +72,7 @@ export default function Lobby() {
             </div>
           </div>
           <div className="text-left sm:text-right">
-            <span className="font-label text-[11px] uppercase tracking-wide text-text-muted">
+            <span className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
               Players in lobby
             </span>
             <div className="relative mt-1 font-mono text-5xl font-extrabold text-accent-yellow font-tnum sm:text-6xl">
@@ -82,7 +84,7 @@ export default function Lobby() {
           {/* dev trigger */}
           <button
             onClick={startEvent}
-            className="absolute right-4 top-4 rounded-xs border border-accent-cyan/40 px-2 py-1 font-label text-[9px] uppercase tracking-wide text-accent-cyan"
+            className="absolute right-4 top-4 rounded-xs border border-accent-cyan/40 px-2 py-1 font-label text-[14px] uppercase tracking-[0.04em] text-accent-cyan"
           >
             (demo) start event
           </button>
@@ -117,7 +119,7 @@ export default function Lobby() {
                 <span className="max-w-full truncate font-body text-xs text-text-primary">
                   {PLAYER.fullName}
                 </span>
-                <span className="rounded-xs border border-accent-yellow px-1 font-label text-[8px] text-accent-yellow">
+                <span className="rounded-xs border border-accent-yellow px-1 font-label text-[11px] text-accent-yellow">
                   YOU
                 </span>
               </div>
@@ -146,7 +148,7 @@ export default function Lobby() {
           {/* Quick rules */}
           <div className="lg:col-span-4">
             <div className="border border-border-default bg-bg-panel p-5">
-              <span className="mb-3 block font-label text-[11px] uppercase tracking-wide text-text-muted">
+              <span className="mb-3 block font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                 Quick rules
               </span>
               <div className="flex flex-col divide-y divide-border-hairline">
@@ -158,7 +160,7 @@ export default function Lobby() {
                   ["Langs", "C C++ JAVA PY"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-2.5">
-                    <span className="font-label text-[10px] uppercase tracking-wide text-text-muted">
+                    <span className="font-label text-[15px] uppercase tracking-[0.04em] text-text-muted">
                       {k}
                     </span>
                     <span className="font-mono text-sm font-bold text-text-primary">{v}</span>
@@ -182,11 +184,11 @@ export default function Lobby() {
         >
           <div
             className={cn(
-              "font-pixel select-none",
+              "font-display select-none",
               countdown === "GO" ? "text-accent-yellow" : "text-text-primary",
             )}
             style={{
-              fontSize: "min(30vw, 160px)",
+              fontSize: "min(42vw, 280px)",
               lineHeight: 1,
               textShadow: "6px 6px 0 #FFD23F55",
             }}
@@ -194,7 +196,7 @@ export default function Lobby() {
             {countdown}
           </div>
           {countdown !== "GO" && (
-            <p className="mt-6 font-label text-base uppercase tracking-wide text-text-secondary">
+            <p className="mt-6 font-label text-lg uppercase tracking-[0.04em] text-text-secondary">
               Round 01 starts in
             </p>
           )}

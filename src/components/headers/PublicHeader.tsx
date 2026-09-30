@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
   const { user } = useAuth();
-  const isAuth = signedIn ?? !!user;
+  const isAuth = signedIn !== undefined ? signedIn : !!user;
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -33,31 +33,38 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
         scrolled ? "bg-bg-canvas/85 backdrop-blur-md" : "bg-bg-canvas",
       )}
     >
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between px-4 sm:px-8 lg:px-16">
-        <Link to="/">
+      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
+        <Link to={isAuth ? "/dashboard" : "/login"}>
           <Logo size={26} />
         </Link>
         <nav className="hidden items-center gap-8 lg:flex">
-          <a href="/#how-it-works" className={navLinkClass({ isActive: false })}>
-            How it works
-          </a>
+          {isAuth && (
+            <NavLink to="/dashboard" className={navLinkClass}>
+              Dashboard
+            </NavLink>
+          )}
           <NavLink to="/rules" className={navLinkClass}>
             Rules
           </NavLink>
+          {isAuth && (
+            <NavLink to="/leaderboard" className={navLinkClass}>
+              Leaderboard
+            </NavLink>
+          )}
         </nav>
         <div className="hidden items-center gap-3 lg:flex">
           {isAuth ? (
             <Button to="/dashboard" variant="secondary" size="sm">
-                Dashboard
-              </Button>
+              Dashboard
+            </Button>
           ) : (
             <Button to="/login" variant="secondary" size="sm">
-                Log in
-              </Button>
+              Log in
+            </Button>
           )}
           <Button to={isAuth ? "/dashboard" : "/login"} variant="primary" size="sm" chamfer>
-              Enter the arena
-            </Button>
+            Enter the arena
+          </Button>
         </div>
         <button
           className="flex h-11 w-11 items-center justify-center text-text-primary lg:hidden"
@@ -81,13 +88,6 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
             </button>
           </div>
           <nav className="mt-10 flex flex-col divide-y divide-border-hairline">
-            <a
-              href="/#how-it-works"
-              className="flex h-14 items-center font-sans text-lg text-text-primary"
-              onClick={() => setMenuOpen(false)}
-            >
-              How it works
-            </a>
             <Link
               to="/rules"
               className="flex h-14 items-center font-sans text-lg text-text-primary"
@@ -95,27 +95,17 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
             >
               Rules
             </Link>
-            {isAuth ? (
-              <Link
-                to="/dashboard"
-                className="flex h-14 items-center font-sans text-lg text-text-primary"
-                onClick={() => setMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="flex h-14 items-center font-sans text-lg text-text-primary"
-                onClick={() => setMenuOpen(false)}
-              >
-                Log in
-              </Link>
-            )}
+            <Link
+              to="/login"
+              className="flex h-14 items-center font-sans text-lg text-text-primary"
+              onClick={() => setMenuOpen(false)}
+            >
+              Log in
+            </Link>
           </nav>
           <div className="mt-auto">
             <Button
-              to={isAuth ? "/dashboard" : "/login"}
+              to={signedIn ? "/dashboard" : "/login"}
               onClick={() => setMenuOpen(false)}
               variant="primary"
               size="lg"

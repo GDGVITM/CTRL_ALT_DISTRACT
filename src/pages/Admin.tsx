@@ -150,10 +150,10 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-bg-canvas">
       <header className="sticky top-0 z-sticky border-b border-border-hairline bg-bg-canvas">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-8">
+        <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-8">
           <div className="flex items-center gap-4">
             <Logo size={24} />
-            <span className="rounded-xs border border-accent-magenta/45 bg-fill-bonus px-2 py-1 font-label text-[10px] uppercase tracking-wide text-accent-magenta">
+            <span className="rounded-xs border border-accent-magenta/45 bg-fill-bonus px-2 py-1 font-label text-[15px] uppercase tracking-[0.04em] text-accent-magenta">
               Admin
             </span>
           </div>
@@ -166,13 +166,13 @@ export default function Admin() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-8">
+      <main className="w-full px-4 py-6 sm:px-8">
         {/* Event control */}
         <section className="relative border border-border-default bg-bg-panel p-6 chamfer-lg sm:p-8" aria-labelledby="control-title">
           <div className="absolute inset-x-0 top-0 h-[2px] bg-accent-yellow" />
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
-              <h1 id="control-title" className="font-pixel text-base text-text-primary sm:text-lg">
+              <h1 id="control-title" className="font-display text-3xl text-text-primary sm:text-4xl">
                 EVENT CONTROL
               </h1>
               <p className="mt-2 max-w-[56ch] font-body text-sm text-text-secondary">
@@ -210,7 +210,7 @@ export default function Admin() {
                 ["Open alerts", String(openCount), highOpen ? "text-danger" : "text-text-primary"],
               ].map(([label, val, color]) => (
                 <div key={label} className="min-w-[110px] px-4 py-3">
-                  <div className="font-label text-[10px] uppercase tracking-wider text-text-muted">{label}</div>
+                  <div className="font-label text-[15px] uppercase tracking-[0.04em]r text-text-muted">{label}</div>
                   <div className={cn("mt-1 font-mono text-xl font-bold font-tnum", color)}>{val}</div>
                 </div>
               ))}
@@ -220,9 +220,9 @@ export default function Admin() {
 
         <div className="mt-8 grid grid-cols-1 gap-8 xl:grid-cols-12">
           {/* Violations */}
-          <section className="xl:col-span-7" aria-labelledby="alerts-title">
+          <section className="xl:col-span-6" aria-labelledby="alerts-title">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 id="alerts-title" className="flex items-center gap-2 font-sans text-2xl font-bold text-text-primary">
+              <h2 id="alerts-title" className="flex items-center gap-2 font-display text-3xl text-text-primary">
                 <ShieldAlert size={22} className="text-warning" /> Proctoring alerts
                 {openCount > 0 && (
                   <span className="rounded-xs bg-fill-danger px-2 py-0.5 font-mono text-xs text-danger">
@@ -255,7 +255,7 @@ export default function Admin() {
                     key={s}
                     onClick={() => setSevFilter(s)}
                     className={cn(
-                      "px-3 py-2 font-label text-[11px] uppercase tracking-wide",
+                      "px-3 py-2 font-label text-[16px] uppercase tracking-[0.04em]",
                       sevFilter === s ? "bg-bg-elevated text-accent-cyan" : "text-text-secondary hover:text-text-primary",
                     )}
                   >
@@ -289,7 +289,7 @@ export default function Admin() {
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={cn("rounded-xs border px-1.5 py-0.5 font-label text-[10px] uppercase tracking-wide", sev.cls)}>
+                        <span className={cn("rounded-xs border px-1.5 py-0.5 font-label text-[15px] uppercase tracking-[0.04em]", sev.cls)}>
                           {sev.icon} {sev.label}
                         </span>
                         <span className="font-sans text-[15px] font-semibold text-text-primary">
@@ -308,7 +308,7 @@ export default function Admin() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {v.acknowledged ? (
-                        <span className="flex items-center gap-1 font-label text-[11px] uppercase text-success">
+                        <span className="flex items-center gap-1 font-label text-[16px] uppercase text-success">
                           <Check size={14} /> Reviewed
                         </span>
                       ) : (
@@ -346,16 +346,16 @@ export default function Admin() {
           </section>
 
           {/* Leaderboard */}
-          <section className="xl:col-span-5" aria-labelledby="lb-title">
+          <section className="xl:col-span-6" aria-labelledby="lb-title">
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="lb-title" className="font-sans text-2xl font-bold text-text-primary">
+              <h2 id="lb-title" className="font-display text-3xl text-text-primary">
                 Leaderboard
               </h2>
               <Link to="/leaderboard" className="font-body text-sm text-accent-cyan hover:underline">
                 Full board →
               </Link>
             </div>
-            <LeaderboardTable rows={LEADERBOARD.slice(0, 10)} compact />
+            <LeaderboardTable rows={LEADERBOARD.slice(0, 10)} />
             <p className="mt-3 font-body text-xs text-text-muted">
               Top 10 of {LEADERBOARD.length} players · {EVENT.totalRounds} rounds
             </p>
