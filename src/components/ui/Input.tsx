@@ -44,13 +44,11 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</span>
           )}
         </div>
-        <div className="min-h-[20px]">
-          {error && (
-            <p id={`${inputId}-error`} className="flex items-center gap-1 font-body text-sm text-danger">
-              ✕ {error}
-            </p>
-          )}
-        </div>
+        {error && (
+          <p id={`${inputId}-error`} className="mt-1 flex items-center gap-1 font-body text-xs text-danger">
+            ✕ {error}
+          </p>
+        )}
       </div>
     );
   },
