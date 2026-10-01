@@ -1,36 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Play, Square, RotateCcw, Search, ShieldAlert, Check, X } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { StatusBadge } from "../components/ui/Badge";
 import { LeaderboardTable } from "../components/leaderboard/LeaderboardTable";
-import { LEADERBOARD, EVENT } from "../lib/data";
-import { eventActions, useEventState } from "../lib/eventStore";
+import { api, ApiError } from "../lib/api";
+import type { AdminOverview, Alert, LeaderboardEntry, ProctorType, Severity } from "../lib/types";
+import { useEvent, useRefreshEvent } from "../context/EventContext";
 import { cn } from "../lib/utils";
 
-type Severity = "high" | "medium" | "low";
-type ViolationType = "TAB_SWITCH" | "FULLSCREEN_EXIT" | "PASTE_BLOCKED" | "MULTI_SESSION" | "DISCONNECT";
-
-interface Violation {
-  id: number;
-  type: ViolationType;
-  severity: Severity;
-  player: string;
-  playerId: string;
-  round: number;
-  time: string;
-  detail: string;
-  acknowledged: boolean;
-  fresh?: boolean;
-}
-
-const TYPE_META: Record<ViolationType, { label: string; severity: Severity; detail: string }> = {
-  TAB_SWITCH: { label: "Left competition tab", severity: "medium", detail: "Tab lost focus for {n}s" },
-  FULLSCREEN_EXIT: { label: "Exited full screen", severity: "medium", detail: "Full screen was closed during a round" },
-  PASTE_BLOCKED: { label: "Paste attempt blocked", severity: "low", detail: "Clipboard paste into the editor was blocked" },
-  MULTI_SESSION: { label: "Second session opened", severity: "high", detail: "Same account opened in another tab or device" },
-  DISCONNECT: { label: "Long disconnect", severity: "low", detail: "Connection lost for {n}s" },
+const TYPE_LABEL: Record<ProctorType, string> = {
+  TAB_SWITCH: "Left competition tab",
+  FULLSCREEN_EXIT: "Exited full screen",
+  PASTE_BLOCKED: "Paste attempt blocked",
+  MULTI_SESSION: "Second session opened",
+  DISCONNECT: "Long disconnect",
 };
 
 const SEVERITY_META: Record<Severity, { label: string; icon: string; cls: string }> = {
@@ -39,16 +24,8 @@ const SEVERITY_META: Record<Severity, { label: string; icon: string; cls: string
   low: { label: "LOW", icon: "■", cls: "border-border-default bg-white/5 text-text-secondary" },
 };
 
-const SEED: Omit<Violation, "id">[] = [
-  { type: "TAB_SWITCH", severity: "medium", player: "PLAYER_31", playerId: "P31", round: 3, time: "10:42:08", detail: "Tab lost focus for 14s", acknowledged: false },
-  { type: "MULTI_SESSION", severity: "high", player: "PLAYER_58", playerId: "P58", round: 2, time: "10:31:55", detail: "Same account opened in another tab or device", acknowledged: false },
-  { type: "PASTE_BLOCKED", severity: "low", player: "PLAYER_12", playerId: "P12", round: 4, time: "10:29:13", detail: "Clipboard paste into the editor was blocked", acknowledged: true },
-  { type: "FULLSCREEN_EXIT", severity: "medium", player: "PLAYER_31", playerId: "P31", round: 2, time: "10:24:40", detail: "Full screen was closed during a round", acknowledged: false },
-  { type: "DISCONNECT", severity: "low", player: "PLAYER_77", playerId: "P77", round: 1, time: "10:11:02", detail: "Connection lost for 42s", acknowledged: true },
-];
-
-function nowClock() {
-  return new Date().toLocaleTimeString("en-GB", { hour12: false });
+function clock(ms: number) {
+  return new Date(ms).toLocaleTimeString("en-GB", { hour12: false });
 }
 
 function formatElapsed(ms: number) {
@@ -62,81 +39,134 @@ function formatElapsed(ms: number) {
 type Confirm = null | "start" | "end";
 
 export default function Admin() {
-  const event = useEventState();
+  const event = useEvent();
+  const refreshEvent = useRefreshEvent();
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [now, setNow] = useState(() => Date.now());
-  const [violations, setViolations] = useState<Violation[]>(() =>
-    SEED.map((v, i) => ({ ...v, id: SEED.length - i })),
-  );
+  const [skew, setSkew] = useState(0); // server clock minus this browser's clock
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [freshIds, setFreshIds] = useState<Set<number>>(new Set());
+  const [board, setBoard] = useState<{ entries: LeaderboardEntry[]; total: number }>({ entries: [], total: 0 });
   const [sevFilter, setSevFilter] = useState<"all" | Severity>("all");
   const [openOnly, setOpenOnly] = useState(false);
   const [query, setQuery] = useState("");
+  const knownAlerts = useRef<Set<number> | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Simulated live proctoring alerts while the event is running.
+  const loadOverview = useCallback(async () => {
+    try {
+      const o = await api.admin.overview();
+      setOverview(o);
+      setSkew(o.serverTime - Date.now());
+    } catch {
+      /* keep the last good numbers; the next poll retries */
+    }
+  }, []);
+
+  const loadAlerts = useCallback(async () => {
+    try {
+      const list = await api.admin.alerts();
+      setAlerts(list);
+      const seen = knownAlerts.current;
+      if (seen) setFreshIds(new Set(list.filter((a) => !seen.has(a.id)).map((a) => a.id)));
+      knownAlerts.current = new Set(list.map((a) => a.id));
+    } catch {
+      /* ignore transient failures */
+    }
+  }, []);
+
+  const loadBoard = useCallback(async () => {
+    try {
+      const r = await api.leaderboard(10);
+      setBoard({ entries: r.entries, total: r.total });
+    } catch {
+      /* ignore transient failures */
+    }
+  }, []);
+
   useEffect(() => {
-    if (event.status !== "live") return;
-    const t = setInterval(() => {
-      const types = Object.keys(TYPE_META) as ViolationType[];
-      const type = types[Math.floor(Math.random() * types.length)];
-      const meta = TYPE_META[type];
-      const n = 5 + Math.floor(Math.random() * 40);
-      const pid = 2 + Math.floor(Math.random() * 120);
-      setViolations((prev) => [
-        {
-          id: (prev[0]?.id ?? 0) + 1,
-          type,
-          severity: meta.severity,
-          player: `PLAYER_${pid.toString().padStart(2, "0")}`,
-          playerId: `P${pid}`,
-          round: 1 + Math.floor((Date.now() - (event.startedAt ?? Date.now())) / 600000) % 10,
-          time: nowClock(),
-          detail: meta.detail.replace("{n}", String(n)),
-          acknowledged: false,
-          fresh: true,
-        },
-        ...prev.map((v) => ({ ...v, fresh: false })),
-      ]);
-    }, 7000);
-    return () => clearInterval(t);
-  }, [event.status, event.startedAt]);
+    void loadOverview();
+    void loadAlerts();
+    void loadBoard();
+    const fast = setInterval(() => void loadOverview(), 3000);
+    const alertTimer = setInterval(() => void loadAlerts(), 4000);
+    const boardTimer = setInterval(() => void loadBoard(), 5000);
+    return () => {
+      clearInterval(fast);
+      clearInterval(alertTimer);
+      clearInterval(boardTimer);
+    };
+  }, [loadOverview, loadAlerts, loadBoard]);
 
   const perPlayer = useMemo(() => {
     const map = new Map<string, number>();
-    violations.forEach((v) => map.set(v.playerId, (map.get(v.playerId) ?? 0) + 1));
+    alerts.forEach((v) => map.set(v.playerId, (map.get(v.playerId) ?? 0) + 1));
     return map;
-  }, [violations]);
+  }, [alerts]);
 
-  const filtered = violations.filter(
+  const filtered = alerts.filter(
     (v) =>
       (sevFilter === "all" || v.severity === sevFilter) &&
       (!openOnly || !v.acknowledged) &&
       (!query || v.player.toLowerCase().includes(query.toLowerCase())),
   );
 
-  const openCount = violations.filter((v) => !v.acknowledged).length;
-  const highOpen = violations.filter((v) => !v.acknowledged && v.severity === "high").length;
+  const openCount = alerts.filter((v) => !v.acknowledged).length;
+  const highOpen = alerts.filter((v) => !v.acknowledged && v.severity === "high").length;
 
-  const runConfirmed = () => {
-    if (!confirm) return;
-    setBusy(true);
-    setTimeout(() => {
-      if (confirm === "start") eventActions.start();
-      else eventActions.end();
-      setBusy(false);
-      setConfirm(null);
-    }, 600);
+  const acknowledge = (id: number) => {
+    setAlerts((all) => all.map((x) => (x.id === id ? { ...x, acknowledged: true } : x)));
+    api.admin.acknowledge(id).catch(() => void loadAlerts());
+  };
+  const acknowledgeAll = () => {
+    setAlerts((all) => all.map((x) => ({ ...x, acknowledged: true })));
+    api.admin.acknowledgeAll().catch(() => void loadAlerts());
+  };
+  const dismiss = (id: number) => {
+    setAlerts((all) => all.filter((x) => x.id !== id));
+    api.admin.dismiss(id).catch(() => void loadAlerts());
   };
 
+  const refreshAll = () => Promise.all([refreshEvent(), loadOverview(), loadAlerts(), loadBoard()]);
+
+  const runConfirmed = async () => {
+    if (!confirm) return;
+    setBusy(true);
+    setActionError("");
+    try {
+      await (confirm === "start" ? api.admin.startEvent() : api.admin.endEvent());
+      await refreshAll();
+      setConfirm(null);
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "That action failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetEvent = async () => {
+    if (!window.confirm("Reset the event? This deletes every player's progress, scores and alerts.")) return;
+    try {
+      await api.admin.resetEvent();
+      knownAlerts.current = null;
+      await refreshAll();
+    } catch (err) {
+      window.alert(err instanceof ApiError ? err.message : "Reset failed.");
+    }
+  };
+
+  const serverNow = now + skew;
   const elapsed =
     event.startedAt === null
       ? 0
-      : (event.status === "ended" ? (event.endedAt ?? now) : now) - event.startedAt;
+      : (event.status === "ended" ? (event.endedAt ?? serverNow) : serverNow) - event.startedAt;
 
   const statusBadge =
     event.status === "live" ? (
@@ -181,7 +211,7 @@ export default function Admin() {
                 {event.status === "live" &&
                   "The event is running. Ending it stops all rounds immediately and sends every player to their results."}
                 {event.status === "ended" &&
-                  "The event has ended. Final standings are locked. Reset to run the demo again."}
+                  "The event has ended. Final standings are locked. Reset to run the event again."}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {event.status === "lobby" && (
@@ -195,8 +225,8 @@ export default function Admin() {
                   </Button>
                 )}
                 {event.status === "ended" && (
-                  <Button variant="secondary" size="lg" icon={<RotateCcw size={16} />} onClick={eventActions.reset}>
-                    Reset demo
+                  <Button variant="secondary" size="lg" icon={<RotateCcw size={16} />} onClick={() => void resetEvent()}>
+                    Reset event
                   </Button>
                 )}
               </div>
@@ -205,8 +235,8 @@ export default function Admin() {
             <div className="grid grid-cols-2 divide-x divide-border-default border border-border-default sm:grid-cols-4">
               {[
                 ["Elapsed", formatElapsed(elapsed), "text-text-primary"],
-                ["Players", "127", "text-accent-yellow"],
-                ["Finished", event.status === "lobby" ? "0" : String(Math.min(LEADERBOARD.length, 5 + Math.floor(elapsed / 20000))), "text-success"],
+                ["Players", String(overview?.players ?? "—"), "text-accent-yellow"],
+                ["Finished", String(overview?.finished ?? "—"), "text-success"],
                 ["Open alerts", String(openCount), highOpen ? "text-danger" : "text-text-primary"],
               ].map(([label, val, color]) => (
                 <div key={label} className="min-w-[110px] px-4 py-3">
@@ -231,7 +261,7 @@ export default function Admin() {
                 )}
               </h2>
               <button
-                onClick={() => setViolations((v) => v.map((x) => ({ ...x, acknowledged: true })))}
+                onClick={acknowledgeAll}
                 disabled={openCount === 0}
                 className="font-body text-sm text-accent-cyan hover:underline disabled:text-text-disabled disabled:no-underline"
               >
@@ -283,7 +313,7 @@ export default function Admin() {
                     key={v.id}
                     className={cn(
                       "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between",
-                      v.fresh && "alert-flash",
+                      freshIds.has(v.id) && "alert-flash",
                       v.acknowledged && "opacity-60",
                     )}
                   >
@@ -293,7 +323,7 @@ export default function Admin() {
                           {sev.icon} {sev.label}
                         </span>
                         <span className="font-sans text-[15px] font-semibold text-text-primary">
-                          {TYPE_META[v.type].label}
+                          {TYPE_LABEL[v.type]}
                         </span>
                         {repeats > 1 && (
                           <span className="rounded-xs bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-warning">
@@ -303,7 +333,7 @@ export default function Admin() {
                       </div>
                       <p className="mt-1.5 font-body text-sm text-text-secondary">{v.detail}</p>
                       <p className="mt-1 font-mono text-xs text-text-muted">
-                        {v.player} · {v.playerId} · Round {v.round.toString().padStart(2, "0")} · {v.time}
+                        {v.player} · {v.playerId} · Round {v.round.toString().padStart(2, "0")} · {clock(v.createdAt)}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -317,16 +347,14 @@ export default function Admin() {
                             size="sm"
                             variant="secondary"
                             icon={<Check size={14} />}
-                            onClick={() =>
-                              setViolations((all) => all.map((x) => (x.id === v.id ? { ...x, acknowledged: true } : x)))
-                            }
+                            onClick={() => acknowledge(v.id)}
                           >
                             Acknowledge
                           </Button>
                           <button
                             aria-label="Dismiss alert"
                             title="Dismiss"
-                            onClick={() => setViolations((all) => all.filter((x) => x.id !== v.id))}
+                            onClick={() => dismiss(v.id)}
                             className="flex h-8 w-8 items-center justify-center rounded-xs text-text-muted hover:bg-bg-hover hover:text-text-primary"
                           >
                             <X size={16} />
@@ -355,9 +383,9 @@ export default function Admin() {
                 Full board →
               </Link>
             </div>
-            <LeaderboardTable rows={LEADERBOARD.slice(0, 10)} />
+            <LeaderboardTable rows={board.entries} />
             <p className="mt-3 font-body text-xs text-text-muted">
-              Top 10 of {LEADERBOARD.length} players · {EVENT.totalRounds} rounds
+              Top 10 of {board.total} players · {event.totalRounds} rounds
             </p>
           </section>
         </div>
@@ -383,12 +411,17 @@ export default function Admin() {
                 ? "All players in the lobby get a 3-2-1 countdown and Round 01 begins together. This can't be undone."
                 : "All rounds stop immediately. Players still in the Arena are sent to their results with the progress saved so far."}
             </p>
+            {actionError && (
+              <p className="mt-3 font-body text-sm text-danger" role="alert">
+                {actionError}
+              </p>
+            )}
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setConfirm(null)} disabled={busy}>
+              <Button variant="secondary" onClick={() => { setConfirm(null); setActionError(""); }} disabled={busy}>
                 {confirm === "end" ? "Keep running" : "Cancel"}
               </Button>
               {confirm === "start" ? (
-                <Button variant="primary" chamfer onClick={runConfirmed} disabled={busy}>
+                <Button variant="primary" chamfer onClick={() => void runConfirmed()} disabled={busy}>
                   {busy ? (
                     <span className="flex items-center gap-2"><PixelSpinner /> Starting…</span>
                   ) : (
@@ -396,7 +429,7 @@ export default function Admin() {
                   )}
                 </Button>
               ) : (
-                <Button variant="danger" onClick={runConfirmed} disabled={busy}>
+                <Button variant="danger" onClick={() => void runConfirmed()} disabled={busy}>
                   {busy ? (
                     <span className="flex items-center gap-2"><PixelSpinner /> Ending…</span>
                   ) : (

@@ -1,4 +1,4 @@
-import { EVENT } from "../../lib/data";
+import { useEvent } from "../../context/EventContext";
 import { cn } from "../../lib/utils";
 
 export function RoundTransition({
@@ -10,6 +10,7 @@ export function RoundTransition({
   variant: "clear" | "time-up";
   isFinal: boolean;
 }) {
+  const EVENT = useEvent();
   return (
     <div className="crt-scanlines absolute inset-0 z-transition flex flex-col items-center justify-center bg-black/94" role="status" aria-live="assertive">
       <span className="font-label text-lg uppercase tracking-[0.04em] text-text-muted">

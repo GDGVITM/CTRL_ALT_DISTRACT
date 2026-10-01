@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { Copy } from "lucide-react";
-import { PROBLEM } from "../../lib/data";
-import { cn } from "../../lib/utils";
+import type { Problem } from "../../lib/types";
+import { cn, difficultyClasses, valueClass } from "../../lib/utils";
 
 const TABS = ["DESCRIPTION", "EXAMPLES", "CONSTRAINTS", "HINTS"] as const;
 type Tab = (typeof TABS)[number];
 
-export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
+export function ProblemPanel({ problem, round }: { problem: Problem | null; round: number }) {
   const [tab, setTab] = useState<Tab>("DESCRIPTION");
-  const [revealed, setRevealed] = useState<boolean[]>(PROBLEM.hints.map(() => false));
+  const [revealed, setRevealed] = useState<boolean[]>([]);
+
+  if (!problem) {
+    return (
+      <div className="flex h-full items-center justify-center bg-bg-panel font-body text-sm text-text-muted">
+        Loading problem…
+      </div>
+    );
+  }
+  const isRevealed = (i: number) => revealed[i] === true;
 
   return (
     <div className="flex h-full flex-col bg-bg-panel">
@@ -17,16 +26,16 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
           <span className="font-mono text-sm text-text-muted">
             {round.toString().padStart(2, "0")}
           </span>
-          <h2 className="font-sans text-xl font-semibold text-text-primary">{PROBLEM.title}</h2>
+          <h2 className="font-sans text-xl font-semibold text-text-primary">{problem.title}</h2>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1 rounded-xs bg-fill-warning px-2 py-0.5 font-label text-[16px] text-warning">
-            ▲ {PROBLEM.difficulty}
+          <span className={cn("flex items-center gap-1 rounded-xs px-2 py-0.5 font-label text-[16px]", difficultyClasses(problem.difficulty))}>
+            ▲ {problem.difficulty}
           </span>
           <span className="rounded-xs bg-fill-brand px-2 py-0.5 font-mono text-[11px] text-accent-yellow">
-            +{PROBLEM.points} PTS
+            +{problem.points} PTS
           </span>
-          {PROBLEM.tags.map((t) => (
+          {problem.tags.map((t) => (
             <span key={t} className="rounded-xs bg-bg-elevated px-2 py-0.5 font-body text-[11px] text-text-secondary">
               {t}
             </span>
@@ -58,7 +67,7 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
           {(tab === "DESCRIPTION" || tab === "EXAMPLES") && (
             <>
               {tab === "DESCRIPTION" &&
-                PROBLEM.description.map((p, i) => (
+                problem.description.map((p, i) => (
                   <p key={i} className="mb-4 text-text-secondary">
                     {p}
                   </p>
@@ -69,11 +78,11 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
                   <h4 className="mb-2 mt-6 font-sans text-base font-semibold text-text-primary">
                     Input format
                   </h4>
-                  <p className="text-text-secondary">{PROBLEM.inputFormat}</p>
+                  <p className="text-text-secondary">{problem.inputFormat}</p>
                   <h4 className="mb-2 mt-6 font-sans text-base font-semibold text-text-primary">
                     Output format
                   </h4>
-                  <p className="text-text-secondary">{PROBLEM.outputFormat}</p>
+                  <p className="text-text-secondary">{problem.outputFormat}</p>
                 </>
               )}
 
@@ -81,7 +90,7 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
                 Examples
               </h4>
               <div className="flex flex-col gap-4">
-                {PROBLEM.examples.map((ex, i) => (
+                {problem.examples.map((ex, i) => (
                   <div key={i} className="border border-border-default bg-bg-inset">
                     <div className="flex items-center justify-between border-b border-border-hairline px-3 py-2">
                       <span className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
@@ -98,11 +107,11 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
                     <div className="flex flex-col gap-2 p-3 font-mono text-[13px]">
                       <div>
                         <span className="text-text-muted">Input: </span>
-                        <span className="text-text-primary">{ex.input}</span>
+                        <span className={cn("text-text-primary", valueClass(ex.input))}>{ex.input}</span>
                       </div>
                       <div>
                         <span className="text-text-muted">Output: </span>
-                        <span className="text-text-primary">{ex.output}</span>
+                        <span className={cn("text-text-primary", valueClass(ex.output))}>{ex.output}</span>
                       </div>
                       <div>
                         <span className="text-text-muted">Explanation: </span>
@@ -115,29 +124,33 @@ export function ProblemPanel({ round = PROBLEM.index }: { round?: number }) {
             </>
           )}
 
-          {(tab === "DESCRIPTION" || tab === "CONSTRAINTS") && (
+          {((tab === "DESCRIPTION" && problem.constraints.length > 0) || tab === "CONSTRAINTS") && (
             <>
               <h4 className="mb-3 mt-6 font-sans text-base font-semibold text-text-primary">
                 Constraints
               </h4>
-              <ul className="flex flex-col gap-1.5 font-mono text-[13px] text-text-secondary">
-                {PROBLEM.constraints.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
+              {problem.constraints.length === 0 ? (
+                <p className="font-body text-sm text-text-muted">No extra constraints for this problem.</p>
+              ) : (
+                <ul className="flex flex-col gap-1.5 font-mono text-[13px] text-text-secondary">
+                  {problem.constraints.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              )}
             </>
           )}
 
           {tab === "HINTS" && (
             <div className="flex flex-col gap-3">
-              {PROBLEM.hints.map((h, i) => (
+              {problem.hints.map((h, i) => (
                 <div key={i} className="border border-border-default bg-bg-inset p-3">
-                  {revealed[i] ? (
+                  {isRevealed(i) ? (
                     <p className="font-body text-sm text-text-secondary">{h}</p>
                   ) : (
                     <button
                       onClick={() =>
-                        setRevealed((r) => r.map((v, idx) => (idx === i ? true : v)))
+                        setRevealed((r) => { const next = [...r]; next[i] = true; return next; })
                       }
                       className="font-body text-sm text-text-secondary hover:text-text-primary"
                     >

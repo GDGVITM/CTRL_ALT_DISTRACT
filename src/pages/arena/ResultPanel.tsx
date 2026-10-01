@@ -1,35 +1,66 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Play } from "lucide-react";
 import { Button, PixelSpinner } from "../../components/ui/Button";
-import { cn } from "../../lib/utils";
+import type { CompileInfo, RunResponse, SampleCase, SubmitResponse } from "../../lib/types";
+import { cn, valueClass } from "../../lib/utils";
 
 export type RunResult = "idle" | "running" | "passed" | "failed" | "compile-error";
-export type SubmitResult = "idle" | "submitting" | "accepted" | "wrong" | "expired";
+export type SubmitResult = "idle" | "submitting" | "accepted" | "wrong" | "compile-error" | "expired";
 
-const SAMPLE_CASES = [
-  { input: "nums = [2, 7, 11, 15], k = 9", expected: "[0, 1]", actual: "[0, 1]" },
-  { input: "nums = [3, 2, 4], k = 6", expected: "[1, 2]", actual: "[1, 2]" },
-  { input: "nums = [3, 3], k = 6", expected: "[0, 1]", actual: "[1, 1]" },
-];
-const FAILING_CASE = 2;
+function CompileBlock({
+  info,
+  onJumpToLine,
+}: {
+  info: CompileInfo;
+  onJumpToLine?: (line: number) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <div className="border border-danger/40 bg-fill-danger px-3 py-2 text-danger" role="alert">
+        ✕ Compilation error
+      </div>
+      <pre className="mt-2 whitespace-pre-wrap text-danger">
+        {info.file},{" "}
+        {info.line !== null ? (
+          <button
+            onClick={() => onJumpToLine?.(info.line!)}
+            className="text-accent-cyan underline underline-offset-2 hover:text-text-primary"
+          >
+            line {info.line}
+          </button>
+        ) : (
+          "unknown line"
+        )}
+        {`\n${info.message}`}
+      </pre>
+    </div>
+  );
+}
 
 export function ResultPanel({
   runResult,
   submitResult,
+  samples,
+  runData,
+  submitData,
+  notice,
   onRun,
   onSubmit,
   onJumpToLine,
   onCollapseChange,
-  compileErrorLine = 3,
   disabled,
 }: {
   runResult: RunResult;
   submitResult: SubmitResult;
+  samples: SampleCase[];
+  runData: RunResponse | null;
+  submitData: SubmitResponse | null;
+  /** A transport / judge problem to show in the Output tab (busy judge, rate limit, ...). */
+  notice: string | null;
   onRun: () => void;
   onSubmit: () => void;
   onJumpToLine?: (line: number) => void;
   onCollapseChange?: (collapsed: boolean) => void;
-  compileErrorLine?: number;
   disabled?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -39,14 +70,19 @@ export function ResultPanel({
   const [tab, setTab] = useState<"TESTCASES" | "OUTPUT">("TESTCASES");
   const [selectedCase, setSelectedCase] = useState(0);
 
+  const failedIndexes = useMemo(
+    () => (runData ? runData.cases.filter((c) => c.status !== "pass" && c.status !== "not_run").map((c) => c.index) : []),
+    [runData],
+  );
+
   // Panel auto-expands and jumps to the tab that shows the latest result.
   useEffect(() => {
     if (runResult === "idle") return;
     setCollapsed(false);
     if (runResult === "running" || runResult === "compile-error") setTab("OUTPUT");
     else setTab("TESTCASES");
-    if (runResult === "failed") setSelectedCase(FAILING_CASE);
-  }, [runResult]);
+    if (runResult === "failed" && failedIndexes.length > 0) setSelectedCase(failedIndexes[0]);
+  }, [runResult, failedIndexes]);
 
   useEffect(() => {
     if (submitResult === "idle") return;
@@ -54,15 +90,25 @@ export function ResultPanel({
     setTab("OUTPUT");
   }, [submitResult]);
 
+  useEffect(() => {
+    if (notice) {
+      setCollapsed(false);
+      setTab("OUTPUT");
+    }
+  }, [notice]);
+
   const caseStatus = (i: number): "neutral" | "pass" | "fail" => {
-    if (runResult === "passed") return "pass";
-    if (runResult === "failed") return i === FAILING_CASE ? "fail" : "pass";
-    return "neutral";
+    const c = runData?.cases[i];
+    if (!c || (runResult !== "passed" && runResult !== "failed")) return "neutral";
+    if (c.status === "pass") return "pass";
+    return c.status === "not_run" ? "neutral" : "fail";
   };
 
-  const current = SAMPLE_CASES[selectedCase];
+  const current = samples[selectedCase] ?? { input: "", expected: "" };
+  const currentRun = runData?.cases[selectedCase];
   const showActual = runResult === "passed" || runResult === "failed";
   const isFail = caseStatus(selectedCase) === "fail";
+  const yourOutput = currentRun?.actual ?? currentRun?.message ?? "—";
 
   return (
     <div className="flex h-full flex-col border-t border-border-default bg-bg-panel">
@@ -129,7 +175,7 @@ export function ResultPanel({
           {tab === "TESTCASES" && (
             <div>
               <div className="mb-3 flex gap-2">
-                {SAMPLE_CASES.map((_, i) => {
+                {samples.map((_, i) => {
                   const status = caseStatus(i);
                   return (
                     <button
@@ -162,16 +208,16 @@ export function ResultPanel({
                   ✓ All sample cases passed. Submit to check the full test set.
                 </div>
               )}
-              {runResult === "failed" && (
+              {runResult === "failed" && runData && (
                 <div className="mb-3 border border-danger/40 bg-fill-danger px-3 py-2 font-body text-sm text-danger" role="alert">
-                  ✕ 2/3 sample cases passed.
+                  ✕ {runData.passed}/{runData.total} sample cases passed.
                 </div>
               )}
 
               <div className="border border-border-default bg-bg-inset p-3 font-mono text-[13px]">
                 <div className="mb-3">
                   <span className="text-text-muted">Input: </span>
-                  <span className="text-text-primary">{current.input}</span>
+                  <span className={cn("text-text-primary", valueClass(current.input))}>{current.input}</span>
                 </div>
                 {showActual && isFail ? (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -179,25 +225,25 @@ export function ResultPanel({
                       <div className="mb-1 font-label text-[15px] uppercase tracking-[0.04em] text-success">
                         Expected
                       </div>
-                      <span className="text-text-primary">{current.expected}</span>
+                      <span className={cn("text-text-primary", valueClass(current.expected))}>{current.expected}</span>
                     </div>
                     <div className="border border-danger/40 bg-fill-danger p-2">
                       <div className="mb-1 font-label text-[15px] uppercase tracking-[0.04em] text-danger">
                         Your output
                       </div>
-                      <span className="text-text-primary">{current.actual}</span>
+                      <span className={cn("text-text-primary", valueClass(yourOutput))}>{yourOutput}</span>
                     </div>
                   </div>
                 ) : (
                   <>
                     <div className="mb-2">
                       <span className="text-text-muted">Expected: </span>
-                      <span className="text-text-primary">{current.expected}</span>
+                      <span className={cn("text-text-primary", valueClass(current.expected))}>{current.expected}</span>
                     </div>
                     {showActual && (
                       <div>
                         <span className="text-text-muted">Your output: </span>
-                        <span className="text-success">{current.actual}</span>
+                        <span className={cn("text-success", valueClass(currentRun?.actual))}>{currentRun?.actual ?? "—"}</span>
                       </div>
                     )}
                   </>
@@ -211,49 +257,46 @@ export function ResultPanel({
 
           {tab === "OUTPUT" && (
             <div className="font-mono text-[13px] text-text-secondary">
-              {runResult === "idle" && submitResult === "idle" && (
+              {runResult === "idle" && submitResult === "idle" && !notice && (
                 <p className="text-text-muted">No output yet. Run or submit your code.</p>
+              )}
+              {notice && runResult === "idle" && submitResult === "idle" && (
+                <div className="border border-danger/40 bg-fill-danger px-3 py-2 text-danger" role="alert">
+                  {notice}
+                </div>
               )}
               {runResult === "running" && (
                 <p className="flex items-center gap-2 text-text-primary">
                   <PixelSpinner /> ▶ Running on sample cases…
                 </p>
               )}
-              {runResult === "compile-error" && (
-                <div className="mb-3">
-                  <div className="border border-danger/40 bg-fill-danger px-3 py-2 text-danger" role="alert">
-                    ✕ Compilation error
-                  </div>
-                  <pre className="mt-2 whitespace-pre-wrap text-danger">
-                    {`solution.py, `}
-                    <button
-                      onClick={() => onJumpToLine?.(compileErrorLine)}
-                      className="text-accent-cyan underline underline-offset-2 hover:text-text-primary"
-                    >
-                      line {compileErrorLine}
-                    </button>
-                    {`\n    for i, n in enumerate(nums)\n                                ^\nSyntaxError: expected ':'`}
-                  </pre>
-                </div>
+              {runResult === "compile-error" && runData?.compile && (
+                <CompileBlock info={runData.compile} onJumpToLine={onJumpToLine} />
               )}
-              {runResult === "passed" && (
-                <p className="mb-3 text-success">✓ Ran 3 sample cases — all passed.</p>
+              {runResult === "passed" && runData && (
+                <p className="mb-3 text-success">✓ Ran {runData.total} sample cases — all passed.</p>
               )}
-              {runResult === "failed" && (
-                <p className="mb-3 text-danger">✕ Ran 3 sample cases — 1 failed (Case 3).</p>
+              {runResult === "failed" && runData && (
+                <p className="mb-3 text-danger">
+                  ✕ Ran {runData.total} sample cases — {failedIndexes.length} failed (
+                  {failedIndexes.map((i) => `Case ${i + 1}`).join(", ")}).
+                </p>
               )}
               {submitResult === "submitting" && (
                 <p className="text-text-primary">⇪ Submitting to full test set…</p>
               )}
-              {submitResult === "accepted" && (
+              {submitResult === "accepted" && submitData && (
                 <div className="border border-success/35 bg-fill-success px-3 py-2 text-success" role="status">
-                  ✓ ACCEPTED — 12/12 tests
+                  ✓ ACCEPTED — {submitData.passed}/{submitData.total} tests
                 </div>
               )}
-              {submitResult === "wrong" && (
+              {submitResult === "wrong" && submitData && (
                 <div className="border border-danger/40 bg-fill-danger px-3 py-2 text-danger" role="alert">
-                  ✕ WRONG ANSWER — 9/12 tests passed
+                  ✕ {submitData.headline} — {submitData.passed}/{submitData.total} tests passed
                 </div>
+              )}
+              {submitResult === "compile-error" && submitData?.compile && (
+                <CompileBlock info={submitData.compile} onJumpToLine={onJumpToLine} />
               )}
               {submitResult === "expired" && (
                 <div className="border border-danger/40 bg-fill-danger px-3 py-2 text-danger" role="alert">

@@ -1,37 +1,76 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Minus, Plus, RotateCcw, Keyboard } from "lucide-react";
-import { PROBLEM } from "../../lib/data";
 import { highlightCode } from "../../lib/highlight";
+import type { LanguageId, Problem } from "../../lib/types";
+import { useEvent } from "../../context/EventContext";
 import { cn } from "../../lib/utils";
 
-const LANGS = [
-  { id: "python", label: "Python", file: "solution.py" },
-  { id: "cpp", label: "C++", file: "solution.cpp" },
-  { id: "c", label: "C", file: "solution.c" },
-  { id: "java", label: "Java", file: "Solution.java" },
-] as const;
+const LANG_KEY = "cad:lang";
+
+function readStore(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStore(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable: drafts just won't survive a refresh */
+  }
+}
 
 export function CodeEditor({
   locked,
   readOnly,
   errorLine,
   focusLine,
+  problem,
+  draftKey,
+  onChange,
 }: {
   locked?: boolean;
   readOnly?: boolean;
   errorLine?: number | null;
   focusLine?: { line: number; nonce: number } | null;
+  problem: Problem | null;
+  /** Prefix for locally saved drafts (one per player, round and language). */
+  draftKey: string;
+  onChange?: (code: string, language: LanguageId) => void;
 }) {
-  const [lang, setLang] = useState<(typeof LANGS)[number]["id"]>("python");
-  const [code, setCode] = useState(PROBLEM.starterCode.python);
+  const LANGS = useEvent().languages;
+  const [lang, setLang] = useState<LanguageId>(() => {
+    const saved = readStore(LANG_KEY);
+    return (LANGS.find((l) => l.id === saved) ?? LANGS[0]).id;
+  });
+  const [code, setCode] = useState("");
   const [fontSize, setFontSize] = useState(14);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [saved, setSaved] = useState(true);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLDivElement>(null);
 
-  const current = LANGS.find((l) => l.id === lang)!;
+  const current = LANGS.find((l) => l.id === lang) ?? LANGS[0];
   const lineCount = code.split("\n").length;
+
+  // Load the saved draft for this language, or the problem's starter template.
+  useEffect(() => {
+    if (!problem) return;
+    setCode(readStore(`${draftKey}:${lang}`) ?? problem.starterCode[lang]);
+  }, [problem, lang, draftKey]);
+
+  useEffect(() => {
+    if (problem) onChange?.(code, lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, lang, problem]);
+
+  const updateCode = (next: string) => {
+    setCode(next);
+    writeStore(`${draftKey}:${lang}`, next);
+  };
 
   useEffect(() => {
     if (!focusLine || !taRef.current) return;
@@ -78,7 +117,7 @@ export function CodeEditor({
                   key={l.id}
                   onClick={() => {
                     setLang(l.id);
-                    setCode(PROBLEM.starterCode[l.id]);
+                    writeStore(LANG_KEY, l.id);
                     setLangMenuOpen(false);
                   }}
                   className={cn(
@@ -97,7 +136,7 @@ export function CodeEditor({
         <button
           title="Reset to template"
           aria-label="Reset to template"
-          onClick={() => setCode(PROBLEM.starterCode[lang])}
+          onClick={() => problem && updateCode(problem.starterCode[lang])}
           className="flex h-8 w-8 items-center justify-center rounded-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary"
         >
           <RotateCcw size={16} />
@@ -159,7 +198,7 @@ export function CodeEditor({
               readOnly={readOnly || locked}
               onScroll={syncScroll}
               onChange={(e) => {
-                setCode(e.target.value);
+                updateCode(e.target.value);
                 setSaved(false);
                 setTimeout(() => setSaved(true), 800);
               }}

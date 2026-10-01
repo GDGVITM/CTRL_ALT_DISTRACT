@@ -2,11 +2,14 @@ import { PublicHeader } from "../components/headers/PublicHeader";
 import { Footer } from "../components/Footer";
 import { Button } from "../components/ui/Button";
 import { CrtMonitor } from "../components/CrtMonitor";
-import { EVENT } from "../lib/data";
+import { useEffect, useState } from "react";
+import { useEvent } from "../context/EventContext";
 import { LeaderboardTable } from "../components/leaderboard/LeaderboardTable";
-import { LEADERBOARD } from "../lib/data";
+import { api } from "../lib/api";
+import type { EventInfo, LeaderboardEntry } from "../lib/types";
+import { formatMMSS } from "../lib/utils";
 
-const STEPS = [
+const steps = (EVENT: EventInfo) => [
   {
     n: "01",
     title: "Join the lobby",
@@ -14,13 +17,13 @@ const STEPS = [
   },
   {
     n: "02",
-    title: "Solve 10 rounds",
-    body: "One DSA problem per round. 10 minutes on the clock. C, C++, Java, or Python.",
+    title: `Solve ${EVENT.totalRounds} rounds`,
+    body: `One DSA problem per round. ${Math.round(EVENT.roundMinutes)} minutes on the clock. ${EVENT.languages.map((l) => l.label).join(", ")}.`,
   },
   {
     n: "03",
     title: "Survive the interrupt",
-    body: "A distraction can appear at any moment. Your workspace locks. You have 30 seconds.",
+    body: `A distraction can appear at any moment. Your workspace locks. You have ${EVENT.distractionSeconds} seconds.`,
   },
   {
     n: "04",
@@ -30,6 +33,12 @@ const STEPS = [
 ];
 
 export default function Landing() {
+  const EVENT = useEvent();
+  const STEPS = steps(EVENT);
+  const [top, setTop] = useState<LeaderboardEntry[]>([]);
+  useEffect(() => {
+    api.leaderboard(5).then((r) => setTop(r.entries)).catch(() => setTop([]));
+  }, []);
   return (
     <div className="bg-bg-canvas">
       <PublicHeader />
@@ -60,7 +69,7 @@ export default function Landing() {
             </h1>
 
             <p className="mt-6 font-sans text-xl font-semibold text-text-primary">
-              Ten problems. Ten minutes each. Thirty-second interruptions.
+              {EVENT.totalRounds} problems. {formatMMSS(EVENT.roundSeconds)} each. {EVENT.distractionSeconds}-second interruptions.
             </p>
 
             <p className="mt-4 max-w-[48ch] font-body text-lg leading-relaxed text-text-secondary">
@@ -190,9 +199,9 @@ export default function Landing() {
           </div>
           <div>
             <h3 className="mb-4 font-pixel text-base text-text-primary">High scores</h3>
-            <LeaderboardTable rows={LEADERBOARD.slice(0, 5)} compact />
+            <LeaderboardTable rows={top} compact />
             <p className="mt-3 font-body text-xs text-text-muted">
-              Placeholder data. The live board opens when the event ends.
+              {top.length === 0 ? "No scores yet. The board fills as players clear rounds." : "Live standings."}
             </p>
           </div>
         </div>

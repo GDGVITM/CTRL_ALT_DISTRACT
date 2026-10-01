@@ -1,7 +1,8 @@
 import { Lock } from "lucide-react";
 import { Logo } from "../../components/Logo";
-import { PLAYER, PROBLEM, EVENT } from "../../lib/data";
-import { formatMMSS, padScore, cn } from "../../lib/utils";
+import { useEvent } from "../../context/EventContext";
+import { useAuth } from "../../context/AuthContext";
+import { formatMMSS, padScore, cn, difficultyClasses } from "../../lib/utils";
 
 export type TimerState = "normal" | "warning" | "critical" | "paused";
 export type InterruptState = "standby" | "active" | "cleared" | "missed";
@@ -16,6 +17,7 @@ export function ArenaHUD({
   solvedRounds,
   expiredRounds,
   connection = "connected",
+  problem,
 }: {
   round: number;
   secondsLeft: number;
@@ -26,7 +28,10 @@ export function ArenaHUD({
   solvedRounds: number[];
   expiredRounds: number[];
   connection?: "connected" | "reconnecting" | "offline";
+  problem?: { title: string; difficulty: string } | null;
 }) {
+  const EVENT = useEvent();
+  const { initials } = useAuth();
   const timerLabel =
     timerState === "paused"
       ? "PAUSED"
@@ -96,10 +101,14 @@ export function ArenaHUD({
 
       {/* Problem meta */}
       <div className="hidden min-w-0 items-center gap-2 border-r border-border-default px-4 xl:flex">
-        <span className="rounded-xs bg-fill-warning px-1.5 py-0.5 font-label text-[15px] text-warning">
-          ▲ {PROBLEM.difficulty}
-        </span>
-        <span className="truncate font-body text-sm text-text-secondary">{PROBLEM.title}</span>
+        {problem && (
+          <>
+            <span className={cn("rounded-xs px-1.5 py-0.5 font-label text-[15px]", difficultyClasses(problem.difficulty))}>
+              ▲ {problem.difficulty}
+            </span>
+            <span className="truncate font-body text-sm text-text-secondary">{problem.title}</span>
+          </>
+        )}
       </div>
 
       {/* Timer (centered) */}
@@ -159,7 +168,7 @@ export function ArenaHUD({
           )}
         />
         <span className="hidden h-7 w-7 items-center justify-center rounded-xs bg-accent-cyan/15 font-mono text-[10px] font-bold text-accent-cyan sm:flex">
-          {PLAYER.initials}
+          {initials}
         </span>
         {connection === "offline" && <Lock size={14} className="text-danger" />}
       </div>

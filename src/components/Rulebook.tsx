@@ -1,8 +1,14 @@
-import { useState } from "react";
-import { EVENT } from "../lib/data";
-import { cn } from "../lib/utils";
+import { useMemo, useState } from "react";
+import { useEvent } from "../context/EventContext";
+import type { EventInfo } from "../lib/types";
+import { cn, formatMMSS } from "../lib/utils";
 
-const SECTIONS = [
+function buildSections(EVENT: EventInfo) {
+  const roundClock = formatMMSS(EVENT.roundMinutes * 60);
+  const interruptClock = formatMMSS(EVENT.distractionSeconds);
+  const langs = EVENT.languages.map((l) => l.label);
+  const langList = langs.length > 1 ? `${langs.slice(0, -1).join(", ")}, or ${langs[langs.length - 1]}` : langs.join("");
+  return [
   {
     id: "structure",
     title: "Structure",
@@ -11,13 +17,13 @@ const SECTIONS = [
   {
     id: "time-limits",
     title: "Time limits",
-    body: "Each round has a 10:00 timer. When it reaches 00:00, the round ends and the next round loads.",
-    chip: "10:00",
+    body: `Each round has a ${roundClock} timer. When it reaches 00:00, the round ends and the next round loads.`,
+    chip: roundClock,
   },
   {
     id: "languages",
     title: "Languages",
-    body: "Write your solution in C, C++, Java, or Python. You can switch languages during a round.",
+    body: `Write your solution in ${langList}. You can switch languages during a round.`,
   },
   {
     id: "running-submitting",
@@ -27,13 +33,13 @@ const SECTIONS = [
   {
     id: "distractions",
     title: "Distractions",
-    body: "At random moments during a round, a distraction challenge appears. Your workspace blurs and locks. You have exactly 30 seconds to solve it. Your code is kept exactly as you left it.",
-    chip: "00:30",
+    body: `At random moments during a round, a distraction challenge appears. Your workspace blurs and locks. You have exactly ${EVENT.distractionSeconds} seconds to solve it. Your code is kept exactly as you left it.`,
+    chip: interruptClock,
   },
   {
     id: "bonus-scoring",
     title: "Bonus scoring",
-    body: `Clearing a distraction earns +${EVENT.bonusPoints}. If the 30 seconds run out, you get no bonus and return to your problem.`,
+    body: `Clearing a distraction earns +${EVENT.bonusPoints}. If the ${EVENT.distractionSeconds} seconds run out, you get no bonus and return to your problem.`,
   },
   {
     id: "leaderboard",
@@ -50,9 +56,12 @@ const SECTIONS = [
     title: "Before you start",
     body: "Use a desktop or laptop. Keep this tab open and in focus. Don't refresh during a round.",
   },
-];
+  ];
+}
 
 export function Rulebook({ scrollable = true }: { scrollable?: boolean }) {
+  const EVENT = useEvent();
+  const SECTIONS = useMemo(() => buildSections(EVENT), [EVENT]);
   const [active, setActive] = useState(SECTIONS[0].id);
 
   const scrollTo = (id: string) => {

@@ -4,6 +4,7 @@ interface Row {
   rank: number;
   id: string;
   name: string;
+  initials: string;
   roundPts: number;
   bonus: number;
   total: number;
@@ -70,7 +71,7 @@ export function LeaderboardTable({
               <td className="px-3 py-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-xs bg-bg-elevated font-mono text-[10px] font-bold text-text-secondary">
-                    {r.id.slice(0, 2)}
+                    {r.initials}
                   </span>
                   <span className="font-body text-sm font-medium text-text-primary">
                     {r.name}

@@ -1,29 +1,33 @@
 import { ArcadeSides } from "../components/ArcadeSides";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MinimalHeader } from "../components/headers/MinimalHeader";
 import { Button } from "../components/ui/Button";
-import { PLAYER } from "../lib/data";
+import { api } from "../lib/api";
+import type { Results } from "../lib/types";
 import { padScore } from "../lib/utils";
 
-const RESULT = {
-  total: 870,
-  roundPts: 720,
-  bonus: 150,
-  solved: 8,
-  timeTaken: "01:12:44",
-  distractionsCleared: 3,
-  distractionsTotal: 4,
-  rounds: [1, 1, 0, 1, 1, 1, 1, 0, 1, 1], // 1 solved, 0 expired
-};
-
 export default function Complete() {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const endedEarly = params.get("ended") === "1";
+  const [result, setResult] = useState<Results | null>(null);
   const [scoreDisplay, setScoreDisplay] = useState(0);
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
+    let alive = true;
+    api
+      .results()
+      .then((r) => alive && setResult(r))
+      .catch(() => alive && navigate("/dashboard", { replace: true }));
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!result) return;
     const timers = [
       setTimeout(() => setStage(1), 100),
       setTimeout(() => setStage(2), 900),
@@ -31,21 +35,25 @@ export default function Complete() {
       setTimeout(() => setStage(4), 2600),
     ];
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [result]);
 
   useEffect(() => {
-    if (stage < 2) return;
+    if (stage < 2 || !result) return;
+    const total = result.total;
     const duration = 1200;
     const start = performance.now();
     let raf: number;
     function tick(now: number) {
       const t = Math.min(1, (now - start) / duration);
-      setScoreDisplay(Math.round(t * RESULT.total));
+      setScoreDisplay(Math.round(t * total));
       if (t < 1) raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [stage]);
+  }, [stage, result]);
+
+  if (!result) return null;
+  const RESULT = result;
 
   return (
     <div className="crt-grid min-h-screen bg-bg-canvas">
@@ -68,7 +76,7 @@ export default function Complete() {
           className="mt-3 font-sans text-xl text-text-secondary transition-opacity duration-300"
           style={{ opacity: stage >= 1 ? 1 : 0 }}
         >
-          {endedEarly ? "The admin ended the event. Your progress is saved." : PLAYER.fullName}
+          {endedEarly ? "The admin ended the event. Your progress is saved." : RESULT.fullName}
         </p>
 
         <div className="mt-10">
@@ -88,7 +96,7 @@ export default function Complete() {
           {[
             ["Round pts", RESULT.roundPts.toString(), "text-text-primary"],
             ["Bonus", `+${RESULT.bonus}`, "text-accent-magenta"],
-            ["Solved", `${RESULT.solved}/10`, "text-success"],
+            ["Solved", `${RESULT.solved}/${RESULT.rounds.length}`, "text-success"],
             ["Time taken", RESULT.timeTaken, "text-text-primary"],
           ].map(([label, val, color]) => (
             <div key={label} className="border border-border-default bg-bg-panel p-5 chamfer">

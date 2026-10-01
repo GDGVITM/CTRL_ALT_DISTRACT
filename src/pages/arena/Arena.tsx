@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArenaHUD, type TimerState, type InterruptState } from "./ArenaHUD";
 import { ProblemPanel } from "./ProblemPanel";
@@ -9,34 +9,109 @@ import { DistractionModal } from "./DistractionModal";
 import { RoundTransition } from "./RoundTransition";
 import { StatusBar } from "./StatusBar";
 import { ResizeHandle } from "./ResizeHandle";
-import { DevConsole } from "./DevConsole";
-import { EVENT } from "../../lib/data";
+import { PixelSpinner } from "../../components/ui/Button";
+import { api, ApiError } from "../../lib/api";
+import type { ArenaState, LanguageId, Problem, RunResponse, SubmitResponse } from "../../lib/types";
+import type { DistractionResult } from "../../types/distraction";
 import { cn } from "../../lib/utils";
-import { useEventState } from "../../lib/eventStore";
+import { useEvent } from "../../context/EventContext";
+import { useAuth } from "../../context/AuthContext";
 
-const ROUND_SECONDS = EVENT.roundMinutes * 60;
+const SYNC_MS = 10_000; // state poll; doubles as the connectivity heartbeat
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function Arena() {
   const navigate = useNavigate();
-  const { status: eventStatus } = useEventState();
-  // Entered from a real (admin-started) event: begin fresh. Otherwise open a mid-run demo state.
-  const fresh = eventStatus === "live";
-  const [round, setRound] = useState(fresh ? 1 : 4);
-  const [secondsLeft, setSecondsLeft] = useState(fresh ? ROUND_SECONDS : 522);
-  const [score, setScore] = useState(fresh ? 0 : 420);
-  const [solvedRounds, setSolvedRounds] = useState<number[]>(fresh ? [] : [1, 2, 3]);
-  const [expiredRounds, setExpiredRounds] = useState<number[]>([]);
-  const [connection, setConnection] = useState<"connected" | "reconnecting" | "offline">("connected");
+  const EVENT = useEvent();
+  const { user } = useAuth();
+  const eventStatus = EVENT.status;
+  const ROUND_SECONDS = EVENT.roundSeconds;
 
+  // ---- server-owned state -------------------------------------------------------------------
+  const [state, setState] = useState<ArenaState | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
+  const lastServerTime = useRef(0);
+
+  const round = state?.round?.round ?? Math.max(state?.participant.currentRound ?? 1, 1);
+  const roundActive = state?.round?.status === "active";
+  const score = state?.participant.totalPts ?? 0;
+  const solvedRounds = state?.rounds.filter((r) => r.status === "solved").map((r) => r.round) ?? [];
+  const expiredRounds = state?.rounds.filter((r) => r.status === "expired").map((r) => r.round) ?? [];
+  const distractionCount = state?.participant.distractionsCleared ?? 0;
+
+  const applyState = useCallback((next: ArenaState, force = false) => {
+    if (!force && next.serverTime < lastServerTime.current) return; // an older response lost the race
+    lastServerTime.current = next.serverTime;
+    setState(next);
+    if (next.round?.status === "active") setSecondsLeft(next.round.secondsLeft);
+    else if (next.round) setSecondsLeft(0);
+  }, []);
+
+  // ---- connectivity -------------------------------------------------------------------------
+  const [connection, setConnection] = useState<"connected" | "reconnecting" | "offline">("connected");
+  const [reconnected, setReconnected] = useState(false);
+  const offlineSince = useRef<number | null>(null);
+  const connectionRef = useRef(connection);
+  useEffect(() => {
+    connectionRef.current = connection;
+  }, [connection]);
+
+  const markOffline = useCallback(() => {
+    if (offlineSince.current === null) offlineSince.current = Date.now();
+    setConnection("offline");
+    setReconnected(false);
+  }, []);
+
+  const markOnline = useCallback(() => {
+    if (connectionRef.current !== "connected") {
+      setConnection("connected");
+      setReconnected(true);
+      setTimeout(() => setReconnected(false), 2500);
+    }
+    if (offlineSince.current !== null) {
+      const seconds = Math.round((Date.now() - offlineSince.current) / 1000);
+      offlineSince.current = null;
+      if (seconds >= 10) api.reportProctor("DISCONNECT", seconds).catch(() => undefined);
+    }
+  }, []);
+
+  const syncState = useCallback(async () => {
+    try {
+      applyState(await api.arena.state());
+      markOnline();
+    } catch (err) {
+      if (err instanceof ApiError && err.isNetwork) markOffline();
+    }
+  }, [applyState, markOffline, markOnline]);
+
+  useEffect(() => {
+    const t = setInterval(() => void syncState(), SYNC_MS);
+    const goOffline = () => markOffline();
+    const goOnline = () => {
+      setConnection("reconnecting");
+      void syncState();
+    };
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, [syncState, markOffline]);
+
+  // ---- UI state -----------------------------------------------------------------------------
   const [runResult, setRunResult] = useState<RunResult>("idle");
   const [submitResult, setSubmitResult] = useState<SubmitResult>("idle");
+  const [runData, setRunData] = useState<RunResponse | null>(null);
+  const [submitData, setSubmitData] = useState<SubmitResponse | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [distraction, setDistraction] = useState<number | null>(null);
-  const [distractionCount, setDistractionCount] = useState(0);
   const [interruptState, setInterruptState] = useState<InterruptState>("standby");
 
   const [transition, setTransition] = useState<{ variant: "clear" | "time-up"; isFinal: boolean } | null>(null);
-  const [timerFrozen, setTimerFrozen] = useState(false);
   const [resultH, setResultH] = useState(240);
   const [resultCollapsed, setResultCollapsed] = useState(false);
   const editorColRef = useRef<HTMLDivElement>(null);
@@ -44,41 +119,113 @@ export default function Arena() {
 
   const [errorLine, setErrorLine] = useState<number | null>(null);
   const [focusLine, setFocusLine] = useState<{ line: number; nonce: number } | null>(null);
-  const [reconnected, setReconnected] = useState(false);
+  const editorRef = useRef<{ code: string; language: LanguageId }>({ code: "", language: EVENT.languages[0].id });
 
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  // ---- bootstrap: enter (or resume) the run -------------------------------------------------
+  useEffect(() => {
+    void (async () => {
+      for (let attempt = 0; alive.current; attempt++) {
+        try {
+          const s = await api.arena.start();
+          if (!alive.current) return;
+          if (s.finished) {
+            navigate(s.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true });
+            return;
+          }
+          applyState(s, true);
+          markOnline();
+          if (s.round?.distraction.state === "active") {
+            setDistraction(s.round.distraction.index);
+            setInterruptState("active");
+          }
+          return;
+        } catch (err) {
+          if (err instanceof ApiError && !err.isNetwork) {
+            // Not joined, or the event is not running: the dashboard explains and routes from there.
+            navigate(err.code === "event_not_live" && eventStatus === "ended" ? "/complete?ended=1" : "/dashboard", { replace: true });
+            return;
+          }
+          markOffline();
+          await sleep(Math.min(1000 * (attempt + 1), 5000));
+        }
+      }
+    })();
+  }, [navigate, applyState, markOnline, markOffline, eventStatus]);
+
+  // The problem for the round in progress.
+  const activeRound = state?.round?.round;
+  useEffect(() => {
+    if (!activeRound) return;
+    let cancelled = false;
+    setProblem(null);
+    const load = async () => {
+      for (let attempt = 0; !cancelled; attempt++) {
+        try {
+          const p = await api.arena.problem(activeRound);
+          if (!cancelled) setProblem(p);
+          return;
+        } catch {
+          await sleep(Math.min(1000 * (attempt + 1), 5000));
+        }
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeRound]);
+
+  // ---- event ended by the admin -------------------------------------------------------------
   const [eventEnded, setEventEnded] = useState(false);
   const prevEventStatus = useRef(eventStatus);
   useEffect(() => {
-    if (prevEventStatus.current === "live" && eventStatus === "ended") {
-      setEventEnded(true);
-      const t = setTimeout(() => navigate("/complete?ended=1"), 2000);
-      prevEventStatus.current = eventStatus;
-      return () => clearTimeout(t);
-    }
+    const endedNow =
+      (prevEventStatus.current === "live" && eventStatus === "ended") || state?.eventStatus === "ended";
     prevEventStatus.current = eventStatus;
-  }, [eventStatus, navigate]);
+    if (!endedNow || eventEnded) return;
+    setEventEnded(true);
+    const t = setTimeout(() => navigate("/complete?ended=1"), 2000);
+    return () => clearTimeout(t);
+  }, [eventStatus, state?.eventStatus, eventEnded, navigate]);
 
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
+  // ---- the clock ----------------------------------------------------------------------------
+  const timerFrozen = distraction !== null;
   useEffect(() => {
-    tickRef.current = setInterval(() => {
-      if (distraction !== null || transition || timerFrozen) return;
-      setSecondsLeft((s) => {
-        if (s <= 0) return 0;
-        return s - 1;
-      });
+    const tick = setInterval(() => {
+      if (!roundActive || distraction !== null || transition) return;
+      setSecondsLeft((s) => Math.max(0, s - 1));
     }, 1000);
-    return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-    };
-  }, [distraction, transition, timerFrozen]);
+    return () => clearInterval(tick);
+  }, [roundActive, distraction, transition]);
 
+  // At 0:00 ask the server to confirm. It closes the round once its own clock agrees (small grace).
+  const expiring = useRef(false);
   useEffect(() => {
-    if (secondsLeft === 0 && !transition && !timerFrozen) {
-      setSubmitResult("expired");
-      setTimeout(() => triggerTransition("time-up"), 400);
-    }
-  }, [secondsLeft]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (secondsLeft > 0 || !roundActive || transition || distraction !== null || expiring.current) return;
+    expiring.current = true;
+    void (async () => {
+      for (let i = 0; i < 12 && alive.current; i++) {
+        try {
+          const s = await api.arena.expire();
+          applyState(s);
+          markOnline();
+          if (s.round?.status !== "active") break;
+        } catch (err) {
+          if (err instanceof ApiError && err.isNetwork) markOffline();
+        }
+        await sleep(1000);
+      }
+      expiring.current = false;
+    })();
+  }, [secondsLeft, roundActive, transition, distraction, applyState, markOnline, markOffline]);
 
   const timerState: TimerState = timerFrozen
     ? "paused"
@@ -88,149 +235,247 @@ export default function Arena() {
         ? "warning"
         : "normal";
 
-  function triggerTransition(variant: "clear" | "time-up") {
-    const isFinal = round >= EVENT.totalRounds;
-    setTransition({ variant, isFinal });
-    if (variant === "clear") {
-      setSolvedRounds((r) => [...r, round]);
-    } else {
-      setExpiredRounds((r) => [...r, round]);
-    }
-    const delay = isFinal ? 1600 : 2000;
-    setTimeout(() => {
-      if (isFinal) {
-        navigate("/complete");
-        return;
-      }
-      setRound((r) => r + 1);
-      setSecondsLeft(ROUND_SECONDS);
-      setRunResult("idle");
-      setSubmitResult("idle");
-      setTransition(null);
-    }, delay);
-  }
+  // ---- round transitions (driven by the server's verdict on the round) ----------------------
+  const resetRoundUi = useCallback(() => {
+    setRunResult("idle");
+    setSubmitResult("idle");
+    setRunData(null);
+    setSubmitData(null);
+    setNotice(null);
+    setErrorLine(null);
+    setInterruptState("standby");
+  }, []);
 
+  const advance = useCallback(async () => {
+    for (let attempt = 0; alive.current; attempt++) {
+      try {
+        const s = await api.arena.start();
+        if (!alive.current) return;
+        if (s.finished) {
+          navigate("/complete", { replace: true });
+          return;
+        }
+        applyState(s, true);
+        resetRoundUi();
+        setTransition(null);
+        markOnline();
+        return;
+      } catch (err) {
+        if (err instanceof ApiError && !err.isNetwork) {
+          navigate("/complete?ended=1", { replace: true });
+          return;
+        }
+        markOffline();
+        await sleep(Math.min(1000 * (attempt + 1), 5000));
+      }
+    }
+  }, [navigate, applyState, resetRoundUi, markOnline, markOffline]);
+
+  const transitioned = useRef(0);
+  useEffect(() => {
+    const r = state?.round;
+    if (!r || r.status === "active" || transition || transitioned.current === r.round) return;
+    transitioned.current = r.round;
+    const variant = r.status === "solved" ? "clear" : "time-up";
+    const closedRound = r.round;
+    const t = setTimeout(
+      () => {
+        const isFinal = closedRound >= EVENT.totalRounds;
+        setTransition({ variant, isFinal });
+        if (variant === "time-up") setSubmitResult("expired");
+        setTimeout(() => {
+          if (isFinal) navigate("/complete");
+          else void advance();
+        }, isFinal ? 1600 : 2000);
+      },
+      variant === "clear" ? 600 : 400,
+    );
+    return () => clearTimeout(t);
+  }, [state?.round, transition, EVENT.totalRounds, navigate, advance]);
+
+  // ---- run / submit -------------------------------------------------------------------------
   const busy =
     distraction !== null ||
     !!transition ||
     connection === "offline" ||
+    !roundActive ||
     runResult === "running" ||
     submitResult === "submitting" ||
     submitResult === "accepted" ||
     submitResult === "expired";
 
-  function handleRun(forced: RunResult = "passed") {
-    if (busy) return;
-    setErrorLine(null);
-    setSubmitResult("idle"); // only the latest action's result is shown
-    setRunResult("running");
-    setTimeout(() => {
-      setRunResult(forced);
-      setErrorLine(forced === "compile-error" ? 3 : null);
-    }, 1000);
-  }
-
-  function handleSubmit(outcome: SubmitResult = "accepted") {
-    if (busy) return;
-    setErrorLine(null);
-    setRunResult("idle"); // only the latest action's result is shown
-    setSubmitResult("submitting");
-    setTimeout(() => {
-      setSubmitResult(outcome);
-      if (outcome === "accepted") {
-        setScore((s) => s + EVENT.dsaPoints);
-        setTimeout(() => triggerTransition("clear"), 600);
+  function handleActionError(err: unknown) {
+    setRunResult("idle");
+    setSubmitResult("idle");
+    if (err instanceof ApiError) {
+      if (err.isNetwork) {
+        markOffline();
+        return;
       }
-    }, 1000);
-  }
-
-  const triggerRef = useRef<() => void>(() => {});
-
-  function triggerDistraction() {
-    if (distraction !== null || transition || submitResult === "accepted" || submitResult === "expired") return;
-    setInterruptState("active");
-    // Cycle through all 10 distraction challenges
-    setDistraction((distractionCount % 10) + 1);
-  }
-
-  triggerRef.current = triggerDistraction;
-
-  // Interrupt after 3 to 5 minutes (180s to 300s) during a round (or after ~20-30s in demo start if user jumps straight in)
-  useEffect(() => {
-    if (distraction !== null || transition || eventEnded) return;
-
-    // Random trigger time between 3 and 5 minutes (180s - 300s) into the 10-minute round
-    // For fast testing or initial demo round, allow trigger between 180s - 300s
-    const randomDelay = (180 + Math.random() * 120) * 1000;
-    const t = setTimeout(() => {
-      triggerRef.current();
-    }, randomDelay);
-
-    return () => clearTimeout(t);
-  }, [eventStatus, distraction, transition, eventEnded, round]);
-
-  function handleDistractionResolved(cleared: boolean) {
-    if (cleared) {
-      setScore((s) => s + EVENT.bonusPoints);
-      setDistractionCount((c) => c + 1);
-      setInterruptState("cleared");
-    } else {
-      setInterruptState("missed");
+      if (err.code === "round_closed" || err.code === "event_not_live") void syncState();
+      setNotice(err.message);
+      return;
     }
+    setNotice("Something went wrong. Please try again.");
+  }
+
+  async function handleRun() {
+    if (busy) return;
+    const { code, language } = editorRef.current;
+    setErrorLine(null);
+    setNotice(null);
+    setSubmitResult("idle"); // only the latest action's result is shown
+    setSubmitData(null);
+    setRunResult("running");
+    try {
+      const r = await api.arena.run(language, code);
+      setRunData(r);
+      setRunResult(r.result);
+      setErrorLine(r.compile?.line ?? null);
+    } catch (err) {
+      handleActionError(err);
+    }
+  }
+
+  async function handleSubmit() {
+    if (busy) return;
+    const { code, language } = editorRef.current;
+    setErrorLine(null);
+    setNotice(null);
+    setRunResult("idle"); // only the latest action's result is shown
+    setRunData(null);
+    setSubmitResult("submitting");
+    try {
+      const r = await api.arena.submit(language, code);
+      setSubmitData(r);
+      setSubmitResult(r.result === "accepted" ? "accepted" : r.result === "compile-error" ? "compile-error" : r.result === "expired" ? "expired" : "wrong");
+      setErrorLine(r.compile?.line ?? null);
+      setState((prev) =>
+        prev
+          ? {
+              ...prev,
+              participant: r.participant,
+              round: prev.round && r.result === "accepted" ? { ...prev.round, status: "solved" } : prev.round,
+            }
+          : prev,
+      );
+      if (r.result === "expired") void syncState();
+    } catch (err) {
+      handleActionError(err);
+    }
+  }
+
+  const runRef = useRef(handleRun);
+  const submitRef = useRef(handleSubmit);
+  useEffect(() => {
+    runRef.current = handleRun;
+    submitRef.current = handleSubmit;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        void submitRef.current();
+      } else if (e.key === "'") {
+        e.preventDefault();
+        void runRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ---- distractions -------------------------------------------------------------------------
+  const startingDistraction = useRef(false);
+  const distractionCooldown = useRef(0);
+  const dState = state?.round?.distraction;
+  useEffect(() => {
+    if (!dState || dState.state !== "pending" || !roundActive || distraction !== null || transition || eventEnded) return;
+    if (startingDistraction.current || Date.now() < distractionCooldown.current) return;
+    if (ROUND_SECONDS - secondsLeft < dState.atSeconds) return;
+    startingDistraction.current = true;
+    void (async () => {
+      try {
+        const s = await api.arena.distractionStart();
+        applyState(s);
+        if (s.round?.distraction.state === "active") {
+          setInterruptState("active");
+          setDistraction(s.round.distraction.index);
+        }
+      } catch (err) {
+        distractionCooldown.current = Date.now() + 3000; // "too early" etc.: try again shortly
+        if (err instanceof ApiError && err.isNetwork) markOffline();
+      } finally {
+        startingDistraction.current = false;
+      }
+    })();
+  }, [secondsLeft, dState, roundActive, distraction, transition, eventEnded, ROUND_SECONDS, applyState, markOffline]);
+
+  async function handleDistractionResolved(cleared: boolean, result: DistractionResult | null) {
     setDistraction(null);
+    setInterruptState(cleared ? "cleared" : "missed");
     setTimeout(() => setInterruptState("standby"), 2000);
+    try {
+      const r = await api.arena.distractionResolve({
+        result: result?.result ?? "timeout",
+        timeTaken: Math.round(result?.timeTaken ?? EVENT.distractionSeconds),
+        distractionId: result?.distractionId,
+        metrics: result?.metrics,
+      });
+      setState((prev) => (prev ? { ...prev, participant: r.participant } : prev));
+      if (!r.cleared) setInterruptState("missed");
+    } catch (err) {
+      if (err instanceof ApiError && err.isNetwork) markOffline();
+    }
+    void syncState(); // pick up the resumed clock from the server
   }
 
   const locked = distraction !== null;
 
-  function changeConnection() {
-    if (connection === "connected") {
-      setConnection("offline");
-      setReconnected(false);
-    } else {
-      setConnection("connected");
-      setReconnected(true);
-      setTimeout(() => setReconnected(false), 2500);
-    }
-  }
+  // ---- proctoring: report leaving the tab / full screen -------------------------------------
+  useEffect(() => {
+    if (eventStatus !== "live") return;
+    let awayAt: number | null = null;
+    let wasFullscreen = !!document.fullscreenElement;
+    const away = () => {
+      if (awayAt === null) awayAt = Date.now();
+    };
+    const back = () => {
+      if (awayAt === null) return;
+      const seconds = Math.round((Date.now() - awayAt) / 1000);
+      awayAt = null;
+      if (seconds >= 2) api.reportProctor("TAB_SWITCH", seconds).catch(() => undefined);
+    };
+    const onVisibility = () => (document.visibilityState === "hidden" ? away() : back());
+    const onFullscreen = () => {
+      if (wasFullscreen && !document.fullscreenElement) api.reportProctor("FULLSCREEN_EXIT").catch(() => undefined);
+      wasFullscreen = !!document.fullscreenElement;
+    };
+    window.addEventListener("blur", away);
+    window.addEventListener("focus", back);
+    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("fullscreenchange", onFullscreen);
+    return () => {
+      window.removeEventListener("blur", away);
+      window.removeEventListener("focus", back);
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("fullscreenchange", onFullscreen);
+    };
+  }, [eventStatus]);
 
-  function resetArena() {
-    setRound(4);
-    setSecondsLeft(522);
-    setScore(420);
-    setSolvedRounds([1, 2, 3]);
-    setExpiredRounds([]);
-    setRunResult("idle");
-    setSubmitResult("idle");
-    setErrorLine(null);
-    setTimerFrozen(false);
-    setConnection("connected");
-    setInterruptState("standby");
-    setDistractionCount(0);
+  if (!state) {
+    return (
+      <div className="crt-grid crt-scanlines fixed inset-0 flex flex-col items-center justify-center bg-bg-canvas text-accent-cyan">
+        <div className="border border-accent-cyan/30 bg-bg-base/80 p-6 text-center font-mono shadow-[0_0_20px_rgba(56,225,255,0.15)]">
+          <div className="mb-3 flex justify-center">
+            <PixelSpinner />
+          </div>
+          <p className="text-xs uppercase tracking-widest text-text-secondary">LOADING ARENA...</p>
+        </div>
+      </div>
+    );
   }
-
-  const devActions = [
-    { label: "⚡ Trigger distraction", onClick: triggerDistraction },
-    { label: "▶ Run — pass", onClick: () => handleRun("passed") },
-    { label: "▶ Run — fail", onClick: () => handleRun("failed") },
-    { label: "▶ Run — compile error", onClick: () => handleRun("compile-error") },
-    { label: "⏎ Submit — accepted", onClick: () => handleSubmit("accepted") },
-    { label: "⏎ Submit — wrong answer", onClick: () => handleSubmit("wrong") },
-    { label: "⏱ Set timer critical (00:47)", onClick: () => setSecondsLeft(47) },
-    { label: "⏱ Set timer warning (02:30)", onClick: () => setSecondsLeft(150) },
-    { label: "⏱ Time's up in 5s", onClick: () => setSecondsLeft(5) },
-    { label: "⏱ Reset timer (08:42)", onClick: () => setSecondsLeft(522) },
-    {
-      label: connection === "connected" ? "📡 Go offline" : "📡 Reconnect",
-      onClick: changeConnection,
-    },
-    {
-      label: timerFrozen ? "🕒 Resume timer" : "🕒 Pause timer (distraction cfg)",
-      onClick: () => setTimerFrozen((v) => !v),
-    },
-    { label: "⏭ Skip to final round (10)", onClick: () => setRound(10) },
-    { label: "↺ Reset arena", onClick: resetArena },
-  ];
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg-canvas">
@@ -244,6 +489,7 @@ export default function Arena() {
         solvedRounds={solvedRounds}
         expiredRounds={expiredRounds}
         connection={connection}
+        problem={problem}
       />
 
       {connection === "offline" && (
@@ -283,7 +529,7 @@ export default function Arena() {
           )}
         >
           <div className={cn("h-full", locked && "blur-[8px] saturate-[0.6]")}>
-            <ProblemPanel round={round} />
+            <ProblemPanel key={round} problem={problem} round={round} />
           </div>
         </div>
 
@@ -303,6 +549,11 @@ export default function Arena() {
                 locked={submitResult === "submitting"}
                 errorLine={errorLine}
                 focusLine={focusLine}
+                problem={problem}
+                draftKey={`cad:code:${user?.id ?? "anon"}:${round}`}
+                onChange={(code, language) => {
+                  editorRef.current = { code, language };
+                }}
               />
             </div>
             <div
@@ -323,15 +574,18 @@ export default function Arena() {
               <ResultPanel
                 runResult={runResult}
                 submitResult={submitResult}
-                onRun={() => handleRun()}
-                onSubmit={() => handleSubmit()}
+                samples={problem?.samples ?? []}
+                runData={runData}
+                submitData={submitData}
+                notice={notice}
+                onRun={() => void handleRun()}
+                onSubmit={() => void handleSubmit()}
                 onCollapseChange={setResultCollapsed}
-                compileErrorLine={errorLine ?? 3}
                 onJumpToLine={(line) => {
                   setMobileTab("CODE");
                   setFocusLine({ line, nonce: Date.now() });
                 }}
-                disabled={connection === "offline" || locked || !!transition}
+                disabled={connection === "offline" || locked || !!transition || !roundActive}
               />
             </div>
           </div>
@@ -339,7 +593,7 @@ export default function Arena() {
 
         {locked && <LockOverlay />}
         {distraction !== null && (
-          <DistractionModal index={distraction} onResolved={handleDistractionResolved} />
+          <DistractionModal index={distraction} onResolved={(cleared, result) => void handleDistractionResolved(cleared, result)} />
         )}
         {transition && (
           <RoundTransition round={round} variant={transition.variant} isFinal={transition.isFinal} />
@@ -347,8 +601,6 @@ export default function Arena() {
       </div>
 
       <StatusBar connection={connection === "offline" ? "Offline" : connection === "reconnecting" ? "Reconnecting" : "Connected"} />
-
-      <DevConsole actions={devActions} />
 
       {eventEnded && (
         <div

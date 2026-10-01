@@ -4,24 +4,44 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { AppHeader } from "../components/headers/AppHeader";
 import { StatusBadge } from "../components/ui/Badge";
 import { Podium } from "../components/leaderboard/Podium";
-import { LEADERBOARD } from "../lib/data";
+import { api } from "../lib/api";
+import type { LeaderboardEntry } from "../lib/types";
 import { cn, padScore } from "../lib/utils";
+import { useEvent } from "../context/EventContext";
 
 const PAGE_SIZE = 15;
 
 export default function Leaderboard() {
+  const { status } = useEvent();
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [query, setQuery] = useState("");
   const [filterTop10, setFilterTop10] = useState(false);
   const [page, setPage] = useState(1);
   const selfRef = useRef<HTMLTableRowElement>(null);
   const pendingJump = useRef(false);
 
+  // Live standings: refresh every few seconds while the event runs, slowly once it has ended.
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      api
+        .leaderboard()
+        .then((r) => alive && setEntries(r.entries))
+        .catch(() => undefined);
+    void load();
+    const t = setInterval(load, status === "ended" ? 30_000 : 5_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [status]);
+
   const rows = useMemo(() => {
-    let r = LEADERBOARD;
+    let r = entries;
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
     if (filterTop10) r = r.slice(0, 10);
     return r;
-  }, [query, filterTop10]);
+  }, [entries, query, filterTop10]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -29,8 +49,8 @@ export default function Leaderboard() {
   const rangeStart = rows.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, rows.length);
 
-  const podium = LEADERBOARD.slice(0, 3);
-  const self = LEADERBOARD.find((p) => p.self);
+  const podium = entries.slice(0, 3);
+  const self = entries.find((p) => p.self);
 
   const goTo = (p: number) => {
     setPage(Math.min(Math.max(1, p), totalPages));
@@ -63,17 +83,27 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-bg-canvas isolate">
       <ArcadeSides contentMax={1120} />
-      <AppHeader eventState="ended" />
+      <AppHeader eventState={status === "ended" ? "ended" : status === "live" ? "live" : "waiting"} />
 
       <div className="crt-scanlines relative border-b border-border-hairline bg-bg-base px-4 py-4 sm:px-8">
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex items-center gap-3">
             <h1 className="font-display text-3xl leading-none text-text-primary sm:text-4xl">High scores</h1>
-            <StatusBadge tone="yellow" icon="■">
-              Final
-            </StatusBadge>
+            {status === "ended" ? (
+              <StatusBadge tone="yellow" icon="■">
+                Final
+              </StatusBadge>
+            ) : status === "live" ? (
+              <StatusBadge tone="danger" pulse="fast" icon="●">
+                Live
+              </StatusBadge>
+            ) : (
+              <StatusBadge tone="warning" pulse="slow" icon="◌">
+                Not started
+              </StatusBadge>
+            )}
             <span className="hidden font-body text-sm text-text-muted sm:inline">
-              {LEADERBOARD.length} players
+              {entries.length} players
             </span>
           </div>
 
@@ -166,7 +196,7 @@ export default function Leaderboard() {
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-7 w-7 items-center justify-center rounded-xs bg-bg-elevated font-mono text-[10px] font-bold text-text-secondary">
-                        {r.id.slice(0, 2)}
+                        {r.initials}
                       </span>
                       <span className="font-body text-sm font-medium text-text-primary">{r.name}</span>
                       {r.self && (
@@ -193,10 +223,16 @@ export default function Leaderboard() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center font-body text-sm text-text-muted">
-                    No player named "{query}".{" "}
-                    <button onClick={() => setQuery("")} className="text-accent-cyan hover:underline">
-                      Clear search
-                    </button>
+                    {entries.length === 0 ? (
+                      "No scores yet. Players appear here once they start a round."
+                    ) : (
+                      <>
+                        No player named "{query}".{" "}
+                        <button onClick={() => setQuery("")} className="text-accent-cyan hover:underline">
+                          Clear search
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               )}
