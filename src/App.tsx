@@ -10,6 +10,8 @@ import Leaderboard from "./pages/Leaderboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
+import { EventProvider } from "./context/EventContext";
+import { MeProvider } from "./context/MeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function ScrollToTop() {
@@ -23,6 +25,8 @@ function ScrollToTop() {
 export default function App() {
   return (
     <AuthProvider>
+      <MeProvider>
+      <EventProvider>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -76,6 +80,8 @@ export default function App() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </EventProvider>
+      </MeProvider>
     </AuthProvider>
   );
 }

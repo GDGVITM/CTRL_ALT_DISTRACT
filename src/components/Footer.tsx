@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
-import { EVENT } from "../lib/data";
+import { useEvent } from "../context/EventContext";
 
 export function Footer() {
+  const EVENT = useEvent();
   return (
     <footer className="border-t border-border-hairline bg-bg-base">
       <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-8 sm:py-16">

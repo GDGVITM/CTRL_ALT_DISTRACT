@@ -42,7 +42,7 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
       <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-8">
           <Link to="/dashboard">
-            <Logo size={26} />
+            <Logo size={36} wordmark={false} />
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <NavLink to="/dashboard" className={navLinkClass}>

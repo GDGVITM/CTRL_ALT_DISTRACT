@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { EVENT } from "../../lib/data";
+import { useEvent } from "../../context/EventContext";
 import { DISTRACTIONS } from "../../utils/distractionRegistry";
 import { DistractionIntro } from "../../components/distractions/DistractionIntro";
 import { DistractionTimer } from "../../components/distractions/DistractionTimer";
@@ -19,8 +19,9 @@ export function DistractionModal({
   onResolved,
 }: {
   index: number;
-  onResolved: (cleared: boolean) => void;
+  onResolved: (cleared: boolean, result: DistractionResultType | null) => void;
 }) {
+  const EVENT = useEvent();
   const meta = DISTRACTIONS[(index - 1) % DISTRACTIONS.length] || DISTRACTIONS[0];
   const timeLimit = meta.estimatedSeconds ? Math.max(meta.estimatedSeconds + 5, 20) : EVENT.distractionSeconds;
 
@@ -100,7 +101,7 @@ export function DistractionModal({
 
   const handleFinish = () => {
     const isSuccess = resultPayload?.result === "passed";
-    onResolved(isSuccess);
+    onResolved(isSuccess, resultPayload);
   };
 
   return (

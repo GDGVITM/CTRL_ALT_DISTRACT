@@ -13,3 +13,15 @@ export function formatMMSS(totalSeconds: number) {
   const sec = s % 60;
   return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
+
+/** Tailwind classes for a difficulty chip. */
+export function difficultyClasses(difficulty: string) {
+  if (difficulty === "EASY") return "bg-fill-success text-success";
+  if (difficulty === "HARD") return "bg-fill-danger text-danger";
+  return "bg-fill-warning text-warning";
+}
+
+/** Multi-line sample values (whole-program problems) go on their own lines, preserving breaks. */
+export function valueClass(value: string | null | undefined) {
+  return value && value.includes("\n") ? "mt-1 block whitespace-pre-wrap" : "";
+}

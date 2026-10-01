@@ -5,9 +5,10 @@ import { Lock, X } from "lucide-react";
 import { AppHeader, type EventBadgeState } from "../components/headers/AppHeader";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { Rulebook } from "../components/Rulebook";
-import { EVENT } from "../lib/data";
-import { cn } from "../lib/utils";
-import { useEventState } from "../lib/eventStore";
+import { api, ApiError } from "../lib/api";
+import { cn, formatMMSS, padScore } from "../lib/utils";
+import { useEvent, useRefreshEvent } from "../context/EventContext";
+import { useMe } from "../context/MeContext";
 import { useAuth } from "../context/AuthContext";
 
 type DashState = "not-joined" | "joined" | "waiting" | "live" | "ended" | "finished";
@@ -36,7 +37,7 @@ const STATE_META: Record<
   live: {
     badge: "live",
     cta: "Return to arena",
-    helper: "Your run is in progress. Round 4/10.",
+    helper: "Your run is in progress.",
   },
   ended: {
     badge: "ended",
@@ -46,23 +47,44 @@ const STATE_META: Record<
   finished: {
     badge: "finished",
     cta: "View leaderboard",
-    helper: "Your score: 870",
+    helper: "You finished every round.",
   },
 };
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { firstName, user } = useAuth();
-  const [state, setState] = useState<DashState>("not-joined");
+  const { firstName } = useAuth();
+  const EVENT = useEvent();
+  const refreshEvent = useRefreshEvent();
+  const { me, refresh: refreshMe } = useMe();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const [checks, setChecks] = useState([false, false, false]);
 
-  const { status: eventStatus } = useEventState();
+  // Always show fresh progress when landing here or when the event changes phase.
   useEffect(() => {
-    if (eventStatus === "live") setState((s) => (s === "joined" || s === "waiting" ? "live" : s));
-    if (eventStatus === "ended") setState("ended");
-  }, [eventStatus]);
+    void refreshMe();
+  }, [EVENT.status, refreshMe]);
+
+  const part = me?.participation ?? null;
+  const state: DashState =
+    part?.status === "finished"
+      ? "finished"
+      : EVENT.status === "ended"
+        ? "ended"
+        : !part
+          ? "not-joined"
+          : EVENT.status === "live"
+            ? "live"
+            : "joined";
+  const showScore = part !== null && (state === "finished" || state === "ended");
+  const helper =
+    state === "live" && part
+      ? `Your run is in progress. Round ${Math.max(part.currentRound, 1)}/${EVENT.totalRounds}.`
+      : state === "finished" && part
+        ? `Your score: ${part.totalPts}`
+        : STATE_META[state].helper;
 
   const meta = STATE_META[state];
   const checklistDone = checks.every(Boolean);
@@ -78,16 +100,21 @@ export default function Dashboard() {
     if (state === "ended" || state === "finished") return navigate("/leaderboard");
   };
 
-  const confirmJoin = () => {
+  const confirmJoin = async () => {
     setJoining(true);
-    setTimeout(() => {
-      setJoining(false);
+    setJoinError("");
+    try {
+      await api.join();
+      await Promise.all([refreshMe(), refreshEvent()]);
       setConfirmOpen(false);
-      setState("joined");
-    }, 700);
+    } catch (err) {
+      setJoinError(err instanceof ApiError ? err.message : "Could not join. Please try again.");
+    } finally {
+      setJoining(false);
+    }
   };
 
-  const playerId = user?.id ? `CAD-${user.id.slice(0, 6).toUpperCase()}` : "CAD-0142";
+  const playerId = me?.playerCode ?? "—";
 
   return (
     <div className="min-h-screen bg-bg-canvas isolate">
@@ -101,24 +128,6 @@ export default function Dashboard() {
         <p className="mt-1 font-body text-sm text-text-muted">
           Player ID {playerId} · {EVENT.collegeName}
         </p>
-
-        {/* dev state switcher */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(Object.keys(STATE_META) as DashState[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setState(s)}
-              className={cn(
-                "rounded-xs border px-2.5 py-1 font-label text-[15px] uppercase tracking-[0.04em]",
-                state === s
-                  ? "border-accent-cyan text-accent-cyan"
-                  : "border-border-default text-text-muted hover:text-text-secondary",
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Event card */}
@@ -146,10 +155,10 @@ export default function Dashboard() {
 
               <div className="mt-6 grid grid-cols-2 divide-x divide-border-default border border-border-default sm:grid-cols-4">
                 {[
-                  ["Rounds", "10"],
-                  ["Per round", "10:00"],
-                  ["Interrupt", "00:30"],
-                  ["Languages", "C · C++ · JAVA · PY"],
+                  ["Rounds", String(EVENT.totalRounds)],
+                  ["Per round", formatMMSS(EVENT.roundSeconds)],
+                  ["Interrupt", formatMMSS(EVENT.distractionSeconds)],
+                  ["Languages", EVENT.languages.map((l) => l.label.toUpperCase()).join(" · ")],
                 ].map(([label, val]) => (
                   <div key={label} className="px-4 py-3">
                     <div className="font-label text-[15px] uppercase tracking-[0.04em]r text-text-muted">
@@ -184,7 +193,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <p className="mt-3 font-body text-sm text-text-muted">
-                {gated ? "Tick all three checklist items to enable joining." : meta.helper}
+                {gated ? "Tick all three checklist items to enable joining." : helper}
               </p>
             </div>
           </div>
@@ -194,9 +203,9 @@ export default function Dashboard() {
             <div className="border border-border-default bg-bg-panel p-6">
               <div className="flex flex-col divide-y divide-border-hairline">
                 {[
-                  ["Entry", state === "not-joined" ? "Not joined" : "Joined"],
-                  ["Rounds", state === "live" || state === "finished" || state === "ended" ? "4/10" : "0/10"],
-                  ["Score", state === "finished" || state === "ended" ? "0870" : "----"],
+                  ["Entry", part ? "Joined" : "Not joined"],
+                  ["Rounds", `${part?.solvedCount ?? 0}/${EVENT.totalRounds}`],
+                  ["Score", showScore && part ? padScore(part.totalPts) : "----"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-2.5">
                     <span className="font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
@@ -268,13 +277,18 @@ export default function Dashboard() {
             </div>
             <p className="mt-3 font-body text-sm text-text-secondary">
               You'll enter the lobby and wait for the admin to start. Once the event
-              starts, the 10 rounds run back to back.
+              starts, the {EVENT.totalRounds} rounds run back to back.
             </p>
+            {joinError && (
+              <p className="mt-3 font-body text-sm text-danger" role="alert">
+                {joinError}
+              </p>
+            )}
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" chamfer onClick={confirmJoin} disabled={joining}>
+              <Button variant="primary" chamfer onClick={() => void confirmJoin()} disabled={joining}>
                 {joining ? (
                   <span className="flex items-center gap-2">
                     <PixelSpinner /> Joining…

@@ -114,12 +114,13 @@ function PodiumColumn({ p }: { p: Entry }) {
 
 export function Podium({ entries }: { entries: Entry[] }) {
   const [first, second, third] = entries;
+  if (!first) return null;
   return (
-    <div className="mb-6" aria-label="Top three players">
+    <div className="mb-6" aria-label="Leading players">
       <div className="flex items-end justify-center gap-3 sm:gap-6">
-        <PodiumColumn p={second} />
+        {second && <PodiumColumn p={second} />}
         <PodiumColumn p={first} />
-        <PodiumColumn p={third} />
+        {third && <PodiumColumn p={third} />}
       </div>
       <div className="pipe-floor mx-auto max-w-[620px]" aria-hidden="true" />
     </div>
