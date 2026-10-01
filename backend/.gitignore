@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 venv/
+
+.venv/
+tests/.ui_sessions.json
+
+tests/.*.txt
