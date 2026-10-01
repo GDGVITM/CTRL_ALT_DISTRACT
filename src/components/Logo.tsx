@@ -21,7 +21,7 @@ function Keycap({
         pressed && "translate-y-[2px]",
       )}
       style={{
-        width: size,
+        width: label === "DISTRACT" ? size * 2.65 : size,
         height: size,
         fontSize: Math.max(7, size * 0.32),
         boxShadow: yellow
@@ -48,11 +48,11 @@ export function Logo({
   as?: "div" | "span";
 }) {
   return (
-    <As className={cn("inline-flex items-center gap-2", className)}>
+    <As aria-label="Ctrl Alt Distract" className={cn("inline-flex items-center gap-2", className)}>
       <span className="inline-flex items-center gap-1">
         <Keycap label="CTRL" size={size} />
         <Keycap label="ALT" size={size} />
-        <Keycap label="D" size={size} yellow />
+        <Keycap label="DISTRACT" size={size} yellow />
       </span>
       {wordmark && (
         <span
@@ -74,7 +74,7 @@ export function KeycapStand({ size = 48 }: { size?: number }) {
     <div className="inline-flex items-center gap-2">
       <Keycap label="CTRL" size={size} />
       <Keycap label="ALT" size={size} />
-      <Keycap label="D" size={size} yellow />
+      <Keycap label="DISTRACT" size={size} yellow />
     </div>
   );
 }

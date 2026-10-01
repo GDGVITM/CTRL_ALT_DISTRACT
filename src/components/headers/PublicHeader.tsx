@@ -35,7 +35,7 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
     >
       <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
         <Link to={isAuth ? "/dashboard" : "/login"}>
-          <Logo size={26} />
+          <Logo size={36} wordmark={false} />
         </Link>
         <nav className="hidden items-center gap-8 lg:flex">
           {isAuth && (
@@ -78,7 +78,7 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
       {menuOpen && (
         <div className="fixed inset-0 z-dropdown flex flex-col bg-bg-canvas p-6 lg:hidden">
           <div className="flex items-center justify-between">
-            <Logo size={26} />
+            <Logo size={36} wordmark={false} />
             <button
               className="flex h-11 w-11 items-center justify-center text-text-primary"
               aria-label="Close menu"
