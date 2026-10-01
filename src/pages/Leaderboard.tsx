@@ -146,7 +146,7 @@ export default function Leaderboard() {
 
       <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-8">
         {/* Podium */}
-        {!query && currentPage === 1 && podium.length === 3 && <Podium entries={podium} />}
+        {!query && currentPage === 1 && podium.length > 0 && <Podium entries={podium} />}
 
         {/* Table */}
         <div id="leaderboard-table" className="scroll-mt-20 overflow-x-auto border border-border-default bg-bg-panel">
