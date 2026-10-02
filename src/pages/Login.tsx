@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
@@ -13,10 +13,18 @@ type Status = "idle" | "submitting" | "error" | "success";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mode, setMode] = useState<Mode>("sign-in");
   const [status, setStatus] = useState<Status>("idle");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [notice, setNotice] = useState("");
+  const blockedStatus = (location.state as { approvalStatus?: string } | null)?.approvalStatus;
+  const accountMessage = blockedStatus === "rejected"
+    ? "Your registration was rejected. Contact the event organisers."
+    : blockedStatus === "pending"
+      ? "Your account is waiting for admin approval."
+      : blockedStatus === "unavailable" ? "Could not verify your account. Please sign in again." : "";
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -28,6 +36,7 @@ export default function Login() {
     e.preventDefault();
     setStatus("submitting");
     setErrorMsg("");
+    setNotice("");
 
     try {
       if (mode === "sign-in") {
@@ -38,7 +47,9 @@ export default function Login() {
 
         if (error) {
           setStatus("error");
-          setErrorMsg(error.message);
+          setErrorMsg(error.code === "user_banned"
+            ? "Your account is not approved for sign-in. Wait for admin approval, or contact the organisers if your registration was rejected."
+            : error.message);
           return;
         }
 
@@ -48,11 +59,20 @@ export default function Login() {
           return;
         }
 
-        setStatus("success");
-
         // Resolve user role
         const profile = await getUserProfile(data.user.id);
-        const resolvedRole = profile?.role || data.user.app_metadata?.role || data.user.user_metadata?.role || "participant";
+        if (!profile || (profile.role !== "admin" && profile.approval_status !== "approved")) {
+          await supabase.auth.signOut({ scope: "local" });
+          setStatus("error");
+          setErrorMsg(!profile
+            ? "Could not verify your account. Please try again."
+            : profile.approval_status === "rejected"
+              ? "Your registration was rejected. Contact the event organisers."
+              : "Your account is waiting for admin approval.");
+          return;
+        }
+        const resolvedRole = profile.role;
+        setStatus("success");
 
         setTimeout(() => {
           if (resolvedRole === "admin") {
@@ -86,11 +106,13 @@ export default function Login() {
           return;
         }
 
-        setStatus("success");
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 500);
+        // Signup may issue a session even though the registration is pending.
+        // Clear it immediately; only admin-approved accounts may enter the app.
+        await supabase.auth.signOut({ scope: "local" });
+        setStatus("idle");
+        setMode("sign-in");
+        setPassword("");
+        setNotice("Account created. Your registration is waiting for admin approval. Once approved, sign in with your email and password.");
       }
     } catch (err: unknown) {
       console.error("Auth error:", err);
@@ -124,7 +146,7 @@ export default function Login() {
           <p className="mt-1 font-body text-xs sm:text-sm text-text-secondary">
             {mode === "sign-in"
               ? "Sign in to join Ctrl Alt Distract."
-              : "Set up your profile to enter the arena."}
+              : "Submit your registration. An admin must approve your account before you can sign in."}
           </p>
 
           {status === "error" && (
@@ -134,6 +156,12 @@ export default function Login() {
             >
               <span>✕</span>
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {(notice || accountMessage) && status !== "error" && (
+            <div role="status" className="mt-3 border border-accent-cyan/30 bg-fill-info px-3 py-3 font-body text-sm text-text-secondary">
+              {notice || accountMessage}
             </div>
           )}
 

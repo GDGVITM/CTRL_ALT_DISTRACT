@@ -1,12 +1,13 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
-import { supabase, getUserProfile, type UserProfile, type UserRole } from "../lib/supabase";
+import { supabase, getUserProfile, type ApprovalStatus, type UserProfile, type UserRole } from "../lib/supabase";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: UserProfile | null;
   role: UserRole;
+  approvalStatus: ApprovalStatus;
   fullName: string;
   firstName: string;
   initials: string;
@@ -22,57 +23,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileRequest = useRef(0);
+  const activeUserId = useRef<string | null>(null);
 
   const fetchProfile = async (currentUser: User) => {
+    const request = ++profileRequest.current;
     const prof = await getUserProfile(currentUser.id);
-    if (prof) {
+    if (request === profileRequest.current) {
       setProfile(prof);
-    } else {
-      // Fallback to app_metadata or user_metadata
-      const metaRole = (currentUser.app_metadata?.role || currentUser.user_metadata?.role || "participant") as UserRole;
-      setProfile({
-        id: currentUser.id,
-        email: currentUser.email || "",
-        role: metaRole,
-        full_name: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Player",
-      });
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Initial session retrieval
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+    let alive = true;
+    const syncSession = (next: Session | null) => {
+      const request = ++profileRequest.current;
+      const changedUser = activeUserId.current !== (next?.user.id ?? null);
+      activeUserId.current = next?.user.id ?? null;
+      setSession(next);
+      setUser(next?.user ?? null);
+      if (changedUser || !next?.user) {
+        setProfile(null);
+        setLoading(!!next?.user);
       }
+      if (!next?.user) return;
+      // Supabase auth callbacks hold an internal lock. Fetch after the callback returns.
+      window.setTimeout(() => {
+        void getUserProfile(next.user.id).then((prof) => {
+          if (alive && request === profileRequest.current) {
+            setProfile(prof);
+            setLoading(false);
+          }
+        });
+      }, 0);
+    };
+    const initialRequest = profileRequest.current;
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (alive && initialRequest === profileRequest.current) syncSession(session);
+    }).catch(() => {
+      if (alive && initialRequest === profileRequest.current) syncSession(null);
     });
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      if (newSession?.user) {
-        await fetchProfile(newSession.user);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (alive) syncSession(newSession);
     });
 
     return () => {
+      alive = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } finally {
+      ++profileRequest.current;
+      activeUserId.current = null;
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setLoading(false);
+    }
   };
 
   const refreshProfile = async () => {
@@ -81,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const role: UserRole = profile?.role || (user?.app_metadata?.role as UserRole) || (user?.user_metadata?.role as UserRole) || "participant";
+  const role: UserRole = profile?.role ?? "participant";
+  const approvalStatus: ApprovalStatus = profile?.approval_status ?? "pending";
   const fullName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Player";
   const firstName = fullName.trim().split(/\s+/)[0] || "Player";
   const initials = fullName
@@ -100,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         role,
+        approvalStatus,
         fullName,
         firstName,
         initials,

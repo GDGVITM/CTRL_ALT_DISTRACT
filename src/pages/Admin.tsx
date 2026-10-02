@@ -5,6 +5,7 @@ import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { StatusBadge } from "../components/ui/Badge";
 import { LeaderboardTable } from "../components/leaderboard/LeaderboardTable";
+import { RegistrationApprovals } from "../components/admin/RegistrationApprovals";
 import { api, ApiError } from "../lib/api";
 import type { AdminOverview, Alert, LeaderboardEntry, ProctorType, Severity } from "../lib/types";
 import { useEvent, useRefreshEvent } from "../context/EventContext";
@@ -247,6 +248,8 @@ export default function Admin() {
             </div>
           </div>
         </section>
+
+        <RegistrationApprovals />
 
         <div className="mt-8 grid grid-cols-1 gap-8 xl:grid-cols-12">
           {/* Violations */}

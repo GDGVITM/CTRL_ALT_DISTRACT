@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type {
   AdminOverview,
+  ApprovalStatus,
   Alert,
   ArenaState,
   DistractionResolveBody,
@@ -12,6 +13,8 @@ import type {
   Problem,
   ProctorType,
   Results,
+  Registration,
+  RegistrationsResponse,
   RunResponse,
   SubmitResponse,
 } from "./types";
@@ -105,6 +108,12 @@ export const api = {
   },
 
   admin: {
+    registrations: (status: ApprovalStatus, search = "", offset = 0) =>
+      get<RegistrationsResponse>(`/api/admin/registrations?${new URLSearchParams({ status, search, offset: String(offset), limit: "20" })}`),
+    approveRegistrations: (selection: { ids: string[]; allPending: boolean; search: string; excludedIds: string[] }) =>
+      post<{ approvedCount: number }>("/api/admin/registrations/approve", selection),
+    reviewRegistration: (id: string, decision: "approved" | "rejected") =>
+      post<Registration>(`/api/admin/registrations/${encodeURIComponent(id)}/review`, { decision }),
     overview: () => get<AdminOverview>("/api/admin/overview"),
     startEvent: () => post<void>("/api/admin/event/start"),
     endEvent: () => post<void>("/api/admin/event/end"),

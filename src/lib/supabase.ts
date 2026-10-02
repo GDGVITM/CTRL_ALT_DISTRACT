@@ -1,4 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import type { ApprovalStatus } from "./types";
+
+export type { ApprovalStatus } from "./types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -23,6 +26,7 @@ export interface UserProfile {
   id: string;
   email: string;
   role: UserRole;
+  approval_status: ApprovalStatus;
   full_name?: string;
   created_at?: string;
 }
@@ -31,7 +35,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, email, role, full_name, created_at")
+      .select("id, email, role, approval_status, full_name, created_at")
       .eq("id", userId)
       .maybeSingle();
 
