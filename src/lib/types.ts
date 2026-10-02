@@ -217,3 +217,20 @@ export interface AdminOverview {
   openAlerts: number;
   highOpenAlerts: number;
 }
+
+export type ApprovalStatus = "pending" | "approved" | "rejected";
+
+export interface Registration {
+  id: string;
+  fullName: string;
+  email: string;
+  approvalStatus: ApprovalStatus;
+  createdAt: number;
+  reviewedAt: number | null;
+}
+
+export interface RegistrationsResponse {
+  items: Registration[];
+  total: number;
+  counts: Record<ApprovalStatus, number>;
+}

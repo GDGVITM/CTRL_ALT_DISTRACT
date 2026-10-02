@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const { user, role, loading } = useAuth();
+  const { user, role, profile, approvalStatus, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -29,6 +29,10 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile || (role !== "admin" && approvalStatus !== "approved")) {
+    return <Navigate to="/login" state={{ approvalStatus: profile ? approvalStatus : "unavailable" }} replace />;
   }
 
   if (adminOnly && role !== "admin") {

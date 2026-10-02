@@ -46,7 +46,9 @@ async def make_admin(conn: asyncpg.Connection, email: str) -> bool:
         user_id = await conn.fetchval("SELECT id FROM auth.users WHERE lower(email) = lower($1)", email)
         if user_id is None:
             return False
-        await conn.execute("UPDATE public.profiles SET role = 'admin' WHERE id = $1", user_id)
+        await conn.execute(
+            "UPDATE public.profiles SET role = 'admin', approval_status = 'approved' WHERE id = $1", user_id
+        )
         await conn.execute(
             "UPDATE auth.users SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) "
             "|| jsonb_build_object('role', 'admin') WHERE id = $1",
