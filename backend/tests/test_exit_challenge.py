@@ -265,7 +265,7 @@ def test_exit_endpoint_requires_authentication():
 
 def test_exit_endpoint_keeps_scores_in_response(exit_db):
     app = create_app()
-    app.dependency_overrides[security.current_user] = lambda: security.AuthUser(USER_ID, "player@example.com", "participant")
+    app.dependency_overrides[security.require_participant] = lambda: security.AuthUser(USER_ID, "player@example.com", "participant")
 
     async def check():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:

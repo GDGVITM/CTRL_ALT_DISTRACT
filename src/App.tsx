@@ -31,9 +31,9 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/rules" element={<Rules />} />
+        <Route path="/rules" element={<ProtectedRoute publicAccess><Rules /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/leaderboard" element={<ProtectedRoute publicAccess><Leaderboard /></ProtectedRoute>} />
 
         {/* Protected Participant Routes */}
         <Route
@@ -87,7 +87,7 @@ export default function App() {
           }
         />
 
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<ProtectedRoute publicAccess><NotFound /></ProtectedRoute>} />
       </Routes>
       </EventProvider>
       </MeProvider>

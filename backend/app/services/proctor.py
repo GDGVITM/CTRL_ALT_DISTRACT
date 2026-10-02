@@ -89,7 +89,7 @@ async def list_alerts(limit: int = 500) -> list[AlertOut]:
             """
             SELECT e.*, p.full_name, p.player_no
             FROM public.proctor_events e JOIN public.profiles p ON p.id = e.user_id
-            WHERE NOT e.dismissed
+            WHERE NOT e.dismissed AND p.role = 'participant'
             ORDER BY e.created_at DESC, e.id DESC
             LIMIT $1
             """,

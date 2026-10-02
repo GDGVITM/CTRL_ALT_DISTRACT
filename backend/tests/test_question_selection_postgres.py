@@ -22,7 +22,7 @@ from app.db import _init_connection
 from app.errors import ApiError
 from app.main import create_app
 from app.schemas import CodeRequest, DistractionResolveRequest, ProblemPublic
-from app.services import arena, catalog, event, people
+from app.services import arena, catalog, event, people, proctor
 from tests.test_unlimited_rounds import USER_ID, accepted
 
 pytestmark = pytest.mark.skipif(
@@ -34,7 +34,7 @@ pytestmark = pytest.mark.skipif(
 class TemporaryConnection:
     """Fail closed if a service tries to access a table outside this fixture."""
 
-    tables = {"event_config", "participations", "round_attempts", "profiles", "submissions", "distraction_events"}
+    tables = {"event_config", "participations", "round_attempts", "profiles", "submissions", "distraction_events", "proctor_events"}
 
     def __init__(self, conn):
         self.conn = conn
@@ -81,8 +81,12 @@ async def isolated_db(monkeypatch):
         await conn.execute("INSERT INTO pg_temp.event_config SELECT * FROM public.event_config")
         await conn.execute("UPDATE pg_temp.event_config SET status='live', total_rounds=10, dsa_points=100, "
                            "distraction_min_at=1000000, distraction_max_at=1000000")
-        await conn.execute("CREATE TEMP TABLE profiles (id UUID PRIMARY KEY, full_name TEXT, player_no INTEGER)")
-        await conn.execute("INSERT INTO pg_temp.profiles VALUES ($1::uuid, 'Selection Test', 1)", USER_ID)
+        await conn.execute("CREATE TEMP TABLE profiles (id UUID PRIMARY KEY, full_name TEXT, player_no INTEGER, "
+                           "role TEXT DEFAULT 'participant', email TEXT, approval_status TEXT DEFAULT 'approved')")
+        await conn.execute("INSERT INTO pg_temp.profiles (id, full_name, player_no) VALUES ($1::uuid, 'Selection Test', 1)", USER_ID)
+        await conn.execute("CREATE TEMP TABLE proctor_events (id INT PRIMARY KEY, user_id UUID, type TEXT, severity TEXT, "
+                           "round_no INT DEFAULT 1, detail TEXT DEFAULT '', acknowledged BOOL DEFAULT FALSE, "
+                           "dismissed BOOL DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW())")
         await conn.execute("CREATE TEMP TABLE submissions (user_id UUID, problem_id INT, round_no INT, language TEXT, "
                            "kind TEXT, code TEXT, verdict TEXT, passed INT, total INT, runtime_ms INT, memory_kb INT, detail TEXT)")
         await conn.execute("CREATE TEMP TABLE distraction_events (user_id UUID, round_no INT, distraction_index INT, "
@@ -123,6 +127,7 @@ async def isolated_db(monkeypatch):
         monkeypatch.setattr(arena, "_judge", judge)
         monkeypatch.setattr(event, "_event_cache", None)
         monkeypatch.setattr(people, "_leaderboard_cache", None)
+        monkeypatch.setattr(people, "_lobby_cache", None)
         yield proxy
     finally:
         await conn.close()  # PostgreSQL drops all session-local tables automatically.
@@ -275,7 +280,7 @@ async def test_question_endpoints_auth_validation_and_response_contract(isolated
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
         assert (await client.get("/api/arena/questions")).status_code == 401
         assert (await client.post("/api/arena/select", json={"round": 10})).status_code == 401
-        app.dependency_overrides[security.current_user] = lambda: security.AuthUser(USER_ID, "test@example.com", "participant")
+        app.dependency_overrides[security.require_participant] = lambda: security.AuthUser(USER_ID, "test@example.com", "participant")
         listed = await client.get("/api/arena/questions")
         assert listed.status_code == 200 and len(listed.json()["items"]) == 10
         assert (await client.post("/api/arena/select", json={"round": 0})).status_code == 422
@@ -283,3 +288,39 @@ async def test_question_endpoints_auth_validation_and_response_contract(isolated
         selected = await client.post("/api/arena/select", json={"round": 10})
         assert selected.status_code == 200 and selected.json()["round"]["round"] == 10
         assert not selected.json()["finished"]
+
+
+@pytest.mark.asyncio
+async def test_legacy_admin_participation_is_excluded_from_every_player_view(isolated_db):
+    admin_id = "00000000-0000-0000-0000-000000000002"
+    lobby_id = "00000000-0000-0000-0000-000000000003"
+    await isolated_db.execute("INSERT INTO public.profiles (id, full_name, player_no, role) "
+                              "VALUES ($1::uuid, 'Legacy Admin', 2, 'admin'), ($2::uuid, 'Lobby Student', 3, 'participant')",
+                              admin_id, lobby_id)
+    await isolated_db.execute("UPDATE public.participations SET status='playing', round_pts=100, bonus_pts=10, "
+                              "total_time_ms=5000 WHERE user_id=$1::uuid", USER_ID)
+    await isolated_db.execute("INSERT INTO public.participations (user_id, problem_order, distraction_order, status, round_pts) "
+                              "VALUES ($1::uuid, $3, $3, 'playing', 9999), ($2::uuid, $3, $3, 'joined', 0)",
+                              admin_id, lobby_id, list(range(1, 11)))
+    await isolated_db.execute("INSERT INTO public.proctor_events (id, user_id, type, severity) "
+                              "VALUES (1, $1::uuid, 'MULTI_SESSION', 'high'), (2, $2::uuid, 'TAB_SWITCH', 'medium')",
+                              admin_id, USER_ID)
+
+    board = await people.leaderboard(admin_id, None)
+    assert board.total == 1 and len(board.entries) == 1
+    assert board.entries[0].name == "Selection Test" and board.entries[0].rank == 1
+    assert board.entries[0].total == 110 and not board.entries[0].self
+    lobby = await people.lobby()
+    assert lobby.count == 2 and {p.name for p in lobby.players} == {"Selection Test", "Lobby Student"}
+    overview = await people.admin_overview()
+    assert (overview.players, overview.playing, overview.finished) == (2, 1, 0)
+    assert (overview.open_alerts, overview.high_open_alerts) == (1, 0)
+    alerts = await proctor.list_alerts()
+    assert len(alerts) == 1 and alerts[0].player == "Selection Test"
+    assert (await people.me(admin_id, None)).participation is None
+    assert (await people.me(USER_ID, None)).participation.total_pts == 110
+    # Existing history is retained; filtering admins does not delete any score rows.
+    assert await isolated_db.fetchval("SELECT count(*) FROM public.participations WHERE user_id=$1::uuid", admin_id) == 1
+    with pytest.raises(ApiError) as exc:
+        await security.require_participant(security.AuthUser(admin_id, None, "participant"))
+    assert exc.value.status == 403 and exc.value.code == "participant_only"

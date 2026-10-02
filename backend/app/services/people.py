@@ -36,7 +36,10 @@ async def me(user_id: str, email: str | None) -> MeResponse:
         )
         if profile is None:
             raise not_found("Profile not found. Try signing out and in again.")
-        part = await conn.fetchrow("SELECT * FROM public.participations WHERE user_id = $1::uuid", user_id)
+        part = (
+            await conn.fetchrow("SELECT * FROM public.participations WHERE user_id = $1::uuid", user_id)
+            if profile["role"] == "participant" else None
+        )
     return MeResponse(
         id=str(profile["id"]),
         email=profile["email"] or email,
@@ -53,11 +56,15 @@ async def lobby() -> LobbyResponse:
     if _lobby_cache and _lobby_cache[0] > now:
         return _lobby_cache[1]
     async with db.acquire() as conn:
-        count = await conn.fetchval("SELECT count(*) FROM public.participations")
+        count = await conn.fetchval(
+            "SELECT count(*) FROM public.participations pa JOIN public.profiles p ON p.id = pa.user_id "
+            "WHERE p.role = 'participant'"
+        )
         rows = await conn.fetch(
             """
             SELECT p.full_name, p.player_no
             FROM public.participations pa JOIN public.profiles p ON p.id = pa.user_id
+            WHERE p.role = 'participant'
             ORDER BY pa.joined_at DESC
             LIMIT $1
             """,
@@ -84,7 +91,7 @@ async def _ranked() -> list[dict]:
                    pa.user_id::text AS user_id, p.full_name, p.player_no,
                    pa.round_pts, pa.bonus_pts, pa.total_pts, pa.total_time_ms
             FROM public.participations pa JOIN public.profiles p ON p.id = pa.user_id
-            WHERE pa.status <> 'joined'
+            WHERE pa.status <> 'joined' AND p.role = 'participant'
             ORDER BY rank
             """
         )
@@ -122,16 +129,18 @@ async def admin_overview() -> AdminOverview:
         counts = await conn.fetchrow(
             """
             SELECT count(*) AS players,
-                   count(*) FILTER (WHERE status = 'playing') AS playing,
-                   count(*) FILTER (WHERE status = 'finished') AS finished
-            FROM public.participations
+                   count(*) FILTER (WHERE pa.status = 'playing') AS playing,
+                   count(*) FILTER (WHERE pa.status = 'finished') AS finished
+            FROM public.participations pa JOIN public.profiles p ON p.id = pa.user_id
+            WHERE p.role = 'participant'
             """
         )
         alerts = await conn.fetchrow(
             """
-            SELECT count(*) FILTER (WHERE NOT acknowledged) AS open,
-                   count(*) FILTER (WHERE NOT acknowledged AND severity = 'high') AS high_open
-            FROM public.proctor_events WHERE NOT dismissed
+            SELECT count(*) FILTER (WHERE NOT e.acknowledged) AS open,
+                   count(*) FILTER (WHERE NOT e.acknowledged AND e.severity = 'high') AS high_open
+            FROM public.proctor_events e JOIN public.profiles p ON p.id = e.user_id
+            WHERE NOT e.dismissed AND p.role = 'participant'
             """
         )
     return AdminOverview(

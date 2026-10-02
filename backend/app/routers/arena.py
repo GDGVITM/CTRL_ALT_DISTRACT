@@ -16,11 +16,11 @@ from ..schemas import (
     SelectQuestionRequest,
     SubmitResponse,
 )
-from ..security import AuthUser, client_id, current_user
+from ..security import AuthUser, client_id, require_participant
 from ..services import arena
 
 router = APIRouter(prefix="/api/arena", tags=["arena"])
-User = Annotated[AuthUser, Depends(current_user)]
+User = Annotated[AuthUser, Depends(require_participant)]
 Client = Annotated[str | None, Depends(client_id)]
 
 
