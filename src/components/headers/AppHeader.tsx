@@ -39,26 +39,24 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
 
   return (
     <header className="sticky top-0 z-sticky h-16 border-b border-border-hairline bg-bg-canvas sm:h-[72px]">
-      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
-        <div className="flex items-center gap-8">
-          <Link to="/dashboard">
-            <Logo size={36} wordmark={false} />
-          </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <NavLink to="/dashboard" className={navLinkClass}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/rules" className={navLinkClass}>
-              Rules
-            </NavLink>
-            <NavLink to="/leaderboard" className={navLinkClass}>
-              Leaderboard
-            </NavLink>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
+      <div className="flex h-full w-full items-center justify-between gap-2 px-4 sm:px-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
+        <Link to="/dashboard" className="shrink-0 justify-self-start">
+          <Logo size={36} wordmark={false} />
+        </Link>
+        <nav className="hidden items-center gap-4 md:flex lg:justify-self-center lg:gap-6">
+          <NavLink to="/dashboard" className={navLinkClass}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/rules" className={navLinkClass}>
+            Rules
+          </NavLink>
+          <NavLink to="/leaderboard" className={navLinkClass}>
+            Leaderboard
+          </NavLink>
+        </nav>
+        <div className="flex min-w-0 items-center justify-end gap-4 justify-self-end">
           <StatusBadge tone={badge.tone} pulse={badge.pulse} icon={badge.icon}>
-            {badge.label}
+            <span className="sr-only sm:not-sr-only">{badge.label}</span>
           </StatusBadge>
           <div className="relative">
             <button
@@ -68,7 +66,7 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
               <span className="flex h-8 w-8 items-center justify-center rounded-xs bg-accent-cyan/15 font-mono text-xs font-bold text-accent-cyan">
                 {initials}
               </span>
-              <span className="hidden font-sans text-sm text-text-primary sm:inline">
+              <span className="hidden max-w-[120px] truncate font-sans text-sm text-text-primary sm:inline md:max-w-16 lg:max-w-[160px]" title={fullName}>
                 {fullName}
               </span>
               <ChevronDown size={16} className="text-text-muted" />

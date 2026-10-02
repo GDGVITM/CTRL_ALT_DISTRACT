@@ -180,9 +180,9 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-bg-canvas">
       <header className="sticky top-0 z-sticky border-b border-border-hairline bg-bg-canvas">
-        <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-8">
+        <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:h-[72px] sm:px-8">
           <div className="flex items-center gap-4">
-            <Logo size={24} />
+            <Logo size={36} wordmark={false} />
             <span className="rounded-xs border border-accent-magenta/45 bg-fill-bonus px-2 py-1 font-label text-[15px] uppercase tracking-[0.04em] text-accent-magenta">
               Admin
             </span>

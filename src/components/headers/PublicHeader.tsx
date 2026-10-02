@@ -33,11 +33,11 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
         scrolled ? "bg-bg-canvas/85 backdrop-blur-md" : "bg-bg-canvas",
       )}
     >
-      <div className="flex h-full w-full items-center justify-between px-4 sm:px-8">
-        <Link to={isAuth ? "/dashboard" : "/login"}>
+      <div className="flex h-full w-full items-center justify-between gap-4 px-4 sm:px-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <Link to={isAuth ? "/dashboard" : "/login"} className="justify-self-start">
           <Logo size={36} wordmark={false} />
         </Link>
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-8 justify-self-center lg:flex">
           {isAuth && (
             <NavLink to="/dashboard" className={navLinkClass}>
               Dashboard
@@ -52,7 +52,7 @@ export function PublicHeader({ signedIn }: { signedIn?: boolean }) {
             </NavLink>
           )}
         </nav>
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden items-center gap-3 justify-self-end lg:flex">
           {isAuth ? (
             <Button to="/dashboard" variant="secondary" size="sm">
               Dashboard
