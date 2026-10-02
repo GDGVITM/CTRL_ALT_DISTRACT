@@ -11,6 +11,7 @@ from ..db import db
 from ..errors import conflict
 from ..schemas import EventInfo, LanguageInfo
 from .common import epoch_ms
+from .scoring import DIFFICULTY_POINTS
 
 _EVENT_TTL_S = 1.0
 _LANG_TTL_S = 60.0
@@ -76,6 +77,7 @@ async def event_info(conn: asyncpg.Connection | None = None) -> EventInfo:
         round_seconds=None,
         round_minutes=None,
         dsa_points=ev["dsa_points"],
+        difficulty_points=DIFFICULTY_POINTS,
         bonus_points=ev["bonus_points"],
         distraction_seconds=ev["distraction_seconds"],
         languages=[LanguageInfo(id=r["id"], label=r["label"], file=r["filename"]) for r in langs],

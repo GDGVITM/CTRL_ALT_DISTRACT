@@ -25,6 +25,7 @@ export interface EventInfo {
   roundSeconds: number | null;
   roundMinutes: number | null;
   dsaPoints: number;
+  difficultyPoints: Record<Difficulty, number>;
   bonusPoints: number;
   distractionSeconds: number;
   languages: LanguageInfo[];

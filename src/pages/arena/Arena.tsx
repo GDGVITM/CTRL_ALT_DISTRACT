@@ -734,7 +734,7 @@ export default function Arena() {
           />
         )}
         {transition && (
-          <RoundTransition round={round} variant={transition.variant} isFinal={transition.isFinal} />
+          <RoundTransition round={round} variant={transition.variant} isFinal={transition.isFinal} points={problem?.points} />
         )}
       </div>
 
