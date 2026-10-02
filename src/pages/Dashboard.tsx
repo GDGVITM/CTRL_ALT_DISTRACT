@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Lock, X } from "lucide-react";
 import { AppHeader, type EventBadgeState } from "../components/headers/AppHeader";
 import { Button, PixelSpinner } from "../components/ui/Button";
-import { Rulebook } from "../components/Rulebook";
 import { api, ApiError } from "../lib/api";
 import { cn, formatMMSS, padScore } from "../lib/utils";
 import { useEvent, useRefreshEvent } from "../context/EventContext";
@@ -183,14 +182,6 @@ export default function Dashboard() {
                 >
                   {meta.cta}
                 </Button>
-                <button
-                  className="font-body text-sm text-accent-cyan hover:underline"
-                  onClick={() =>
-                    document.getElementById("rulebook")?.scrollIntoView({ behavior: "smooth" })
-                  }
-                >
-                  Read the rulebook
-                </button>
               </div>
               <p className="mt-3 font-body text-sm text-text-muted">
                 {gated ? "Tick all three checklist items to enable joining." : helper}
@@ -237,11 +228,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Rulebook */}
-        <div id="rulebook" className="mt-10 scroll-mt-20">
-          <h2 className="mb-4 font-display text-3xl text-text-primary">Rulebook</h2>
-          <Rulebook />
-        </div>
       </main>
 
       {/* mobile sticky CTA */}
