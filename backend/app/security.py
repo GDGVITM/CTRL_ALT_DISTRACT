@@ -102,7 +102,23 @@ async def optional_user(
 async def current_user(user: Annotated[AuthUser | None, Depends(optional_user)]) -> AuthUser:
     if user is None:
         raise _unauthorized("Missing Authorization header")
+    await require_approved_account(user.id)
     return user
+
+
+async def require_approved_account(user_id: str) -> None:
+    # Query on every protected request: a stale JWT must not bypass account review.
+    async with db.acquire() as conn:
+        profile = await conn.fetchrow(
+            "SELECT role::text AS role, approval_status FROM public.profiles WHERE id = $1::uuid", user_id
+        )
+    if profile is None:
+        raise ApiError(403, "account_unavailable", "Your account profile could not be verified.")
+    if profile["role"] == "admin" or profile["approval_status"] == "approved":
+        return
+    if profile["approval_status"] == "rejected":
+        raise ApiError(403, "account_rejected", "Your registration was rejected. Contact the event organisers.")
+    raise ApiError(403, "approval_pending", "Your account is waiting for admin approval.")
 
 
 _admin_cache: dict[str, tuple[bool, float]] = {}

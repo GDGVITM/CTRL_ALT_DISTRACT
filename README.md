@@ -20,7 +20,7 @@ A live DSA competition with timed rounds, code judging, and surprise mini-games.
 - **Timed rounds:** the server tracks time, progress, and scores across refreshes.
 - **Distraction mini-games:** random interruptions pause the round clock while players complete a challenge.
 - **Live competition:** a shared lobby, event countdown, leaderboard, and results page.
-- **Admin console:** start and end the event, review proctoring alerts, and reset an ended event.
+- **Admin console:** approve or reject participant registrations, control the event, review proctoring alerts, and reset an ended event.
 - **Arcade interface:** dark panels, pixel typography, and the CTRL / ALT / DISTRACT keycap logo.
 
 The default format is ten rounds. Event settings and the problem pool are configured in the database.
@@ -111,8 +111,9 @@ Both roles use the **same `/login` page**. There is no separate admin signup for
 
 | Action | Behavior |
 | --- | --- |
-| Create an account | Registers a participant using full name, email, and password |
-| Sign in as a participant | Opens `/dashboard` |
+| Create an account | Creates a pending registration using full name, email, and password; no dashboard access yet |
+| Sign in as an approved participant | Opens `/dashboard` |
+| Sign in while pending or rejected | Blocked until the account is approved |
 | Sign in as an admin | Opens `/admin` |
 | Open `/admin` as a participant | Redirects to `/dashboard`; backend admin endpoints also reject access |
 
@@ -124,17 +125,22 @@ python -m app.cli make-admin "you@example.com"
 
 Sign out and sign in again to refresh the account's authentication role. The command updates both the database profile and Supabase app metadata; backend admin access is checked against the database.
 
-The local Supabase configuration disables email confirmation, and the migrations include automatic email confirmation. Apply the migrations and verify the authentication settings in your Supabase project.
+In `/admin`, **Account approvals** shows pending registrations and reviewed accounts. Admins can search by name or email, approve requests, or reject them with confirmation. **Select all** includes pending registrations across every page and respects the search filter; individual checkboxes let admins exclude accounts. **Approve selected** approves the selection in one action and enables sign-in. Bulk approval skips registrations already reviewed by another admin. Decisions record the reviewer and time; a registration can be reviewed only once.
+
+Apply `python -m app.cli migrate` before running the updated app. Migration `008_registration_approval.sql` keeps existing accounts approved and makes future participant registrations pending. A database trigger synchronizes registration status with Supabase's sign-in block. The backend also checks approval on every protected request, so an old token cannot bypass a pending or rejected status. Participants cannot change their own approval or role.
+
+Email confirmation and admin approval are separate. The local configuration and existing migrations automatically confirm email addresses, but participant sign-in still requires admin approval. Signup clears its initial session and displays the waiting-for-approval message.
 
 To use a participant and admin at the same time, open separate browser profiles, another browser, or a normal window plus a private window. Tabs in one browser session share the signed-in account.
 
 ## Running an event
 
-1. **Join:** participants sign up, read the rulebook through **Rules**, tick the dashboard checklist, and join the lobby.
-2. **Start:** an admin opens `/admin` and selects **Start event**. Players see the countdown before entering the arena.
-3. **Play:** participants complete their assigned rounds, submit solutions, and handle distraction mini-games.
-4. **Finish:** **End event** closes active rounds and sends players to their results.
-5. **Reset:** after the event ends, **Reset event** clears participation, attempts, submissions, and alerts, then reopens the lobby.
+1. **Register and approve:** participants create accounts; an admin reviews them under **Account approvals**.
+2. **Join:** approved participants sign in, read the rulebook through **Rules**, tick the dashboard checklist, and join the lobby.
+3. **Start:** an admin opens `/admin` and selects **Start event**. Players see the countdown before entering the arena.
+4. **Play:** participants complete their assigned rounds, submit solutions, and handle distraction mini-games.
+5. **Finish:** **End event** closes active rounds and sends players to their results.
+6. **Reset:** after the event ends, **Reset event** clears participation, attempts, submissions, and alerts, then reopens the lobby. Registration approvals are preserved.
 
 ## Architecture
 
@@ -188,7 +194,7 @@ The backend defaults to `https://ce.judge0.com`. For a hosted or self-hosted ins
 | `/lobby` | Player roster and countdown | Signed in |
 | `/arena` | Problem, editor, judging, and distractions | Signed in |
 | `/complete` | Player results | Signed in |
-| `/admin` | Event controls, alerts, and top players | Admin |
+| `/admin` | Account approvals, event controls, alerts, and top players | Admin |
 
 ## Development checks
 
@@ -209,6 +215,7 @@ From `backend/`, with the Python environment activated:
 | `python -m tests.e2e_io "<questions>.pdf"` | Full API flow with the event's problem set |
 | `python -m tests.e2e_flow "<questions>.pdf"` | Full API flow using demo problems, then restore the event set |
 | `python -m app.cli status` | Current event state and database row counts |
+| `python -m tests.live_registration_check` | Real signup, approval/rejection, Supabase login, API access, and self-approval/concurrency checks using temporary accounts |
 
 Live checks need the configured database and/or Judge0. The end-to-end scripts create and delete test users and refuse to run if real participants exist. The demo flow temporarily replaces the problem set.
 

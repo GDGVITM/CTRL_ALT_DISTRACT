@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -253,3 +254,51 @@ class AdminOverview(CamelModel):
     finished: int
     open_alerts: int
     high_open_alerts: int
+
+
+ApprovalStatus = Literal["pending", "approved", "rejected"]
+
+
+class Registration(CamelModel):
+    id: str
+    full_name: str
+    email: str
+    approval_status: ApprovalStatus
+    created_at: int
+    reviewed_at: int | None
+
+
+class RegistrationCounts(CamelModel):
+    pending: int
+    approved: int
+    rejected: int
+
+
+class RegistrationsResponse(CamelModel):
+    items: list[Registration]
+    total: int
+    counts: RegistrationCounts
+
+
+class ReviewRegistrationRequest(CamelModel):
+    decision: Literal["approved", "rejected"]
+
+
+class BulkApproveRegistrationsRequest(CamelModel):
+    ids: list[UUID] = Field(default_factory=list, max_length=10000)
+    all_pending: bool = False
+    search: str = Field(default="", max_length=100)
+    excluded_ids: list[UUID] = Field(default_factory=list, max_length=10000)
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        if self.all_pending:
+            if self.ids:
+                raise ValueError("Choose all pending or explicit IDs, not both.")
+        elif not self.ids or self.excluded_ids or self.search:
+            raise ValueError("Select registration IDs, or use all pending with optional search/exclusions.")
+        return self
+
+
+class BulkApproveRegistrationsResponse(CamelModel):
+    approved_count: int

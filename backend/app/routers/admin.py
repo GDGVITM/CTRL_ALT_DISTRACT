@@ -1,13 +1,42 @@
 """Admin console endpoints. Every route requires an admin role (checked against the database)."""
 
-from fastapi import APIRouter, Depends, Response
+from typing import Annotated
+from uuid import UUID
 
-from ..schemas import AdminOverview, AlertOut
-from ..security import require_admin
+from fastapi import APIRouter, Depends, Query, Response
+
+from ..schemas import AdminOverview, AlertOut, ApprovalStatus, BulkApproveRegistrationsRequest, BulkApproveRegistrationsResponse, Registration, RegistrationsResponse, ReviewRegistrationRequest
+from ..security import AuthUser, require_admin
 from ..services import event as event_service
-from ..services import people, proctor
+from ..services import people, proctor, registrations
 
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+
+
+@router.get("/registrations", response_model=RegistrationsResponse)
+async def list_registrations(
+    status: ApprovalStatus = "pending",
+    search: Annotated[str, Query(max_length=100)] = "",
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> RegistrationsResponse:
+    return await registrations.list_registrations(status, search.strip(), offset, limit)
+
+
+@router.post("/registrations/approve", response_model=BulkApproveRegistrationsResponse)
+async def bulk_approve_registrations(
+    body: BulkApproveRegistrationsRequest,
+    reviewer: Annotated[AuthUser, Depends(require_admin)],
+) -> BulkApproveRegistrationsResponse:
+    return await registrations.bulk_approve_registrations(body, reviewer.id)
+
+
+@router.post("/registrations/{user_id}/review", response_model=Registration)
+async def review_registration(
+    user_id: UUID, body: ReviewRegistrationRequest,
+    reviewer: Annotated[AuthUser, Depends(require_admin)],
+) -> Registration:
+    return await registrations.review_registration(user_id, reviewer.id, body.decision)
 
 
 @router.get("/overview", response_model=AdminOverview)
