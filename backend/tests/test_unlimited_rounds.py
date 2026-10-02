@@ -198,7 +198,8 @@ def test_abandoned_distraction_times_out_once_without_expiring_question(round_db
     run(check())
 
 
-def test_simultaneous_late_accepted_submissions_score_once_with_full_elapsed_time(round_db, monkeypatch):
+@pytest.mark.parametrize("difficulty,points", [("EASY", 100), ("MEDIUM", 150), ("HARD", 200)])
+def test_simultaneous_late_accepted_submissions_score_once_with_full_elapsed_time(round_db, monkeypatch, difficulty, points):
     async def check():
         both_judging = asyncio.Event()
         arrivals = 0
@@ -209,7 +210,7 @@ def test_simultaneous_late_accepted_submissions_score_once_with_full_elapsed_tim
             if arrivals == 2:
                 both_judging.set()
             await both_judging.wait()
-            return SimpleNamespace(id=7), [], accepted()
+            return SimpleNamespace(id=7, public=SimpleNamespace(difficulty=difficulty, points=points)), [], accepted()
 
         monkeypatch.setattr(arena, "_judge", judge)
         req = CodeRequest(language="python", code="print(42)")
@@ -218,7 +219,9 @@ def test_simultaneous_late_accepted_submissions_score_once_with_full_elapsed_tim
         assert round_db.attempt["status"] == "solved"
         assert round_db.attempt["time_ms"] == USED_MS
         assert round_db.part["total_time_ms"] == USED_MS
-        assert round_db.part["round_pts"] == 100 and round_db.part["solved_count"] == 1
+        assert round_db.part["round_pts"] == points and round_db.part["solved_count"] == 1
+        assert round_db.attempt["points"] == points
+        assert round_db.part["total_pts"] == points
         with pytest.raises(ApiError) as exc:
             await arena._open_round(USER_ID)
         assert exc.value.code == "round_closed"
@@ -235,7 +238,7 @@ def test_failed_late_submission_can_be_corrected_without_losing_round(round_db, 
         evaluations = iter([first_evaluation, accepted()])
 
         async def judge(attempt, req, **kwargs):
-            return SimpleNamespace(id=7), [], next(evaluations)
+            return SimpleNamespace(id=7, public=SimpleNamespace(points=100)), [], next(evaluations)
 
         monkeypatch.setattr(arena, "_judge", judge)
         req = CodeRequest(language="python", code="print(42)")
@@ -269,7 +272,7 @@ def test_admin_event_cutoff_during_judging_prevents_late_points(round_db, monkey
 
     async def judge(attempt, req, **kwargs):
         await event.end_event()
-        return SimpleNamespace(id=7), [], accepted()
+        return SimpleNamespace(id=7, public=SimpleNamespace(points=100)), [], accepted()
 
     monkeypatch.setattr(event, "finalize_all", finalize)
     monkeypatch.setattr(arena, "_judge", judge)

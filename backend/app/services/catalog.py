@@ -13,6 +13,7 @@ from ..judge.harness import SUPPORTED_LANGUAGES, starter_code, starter_code_io
 from ..judge.service import JudgeCase, JudgeLanguage
 from ..schemas import Example, ProblemPublic, SampleCase
 from . import event as event_service
+from .scoring import DIFFICULTY_POINTS
 
 _TTL_S = 120.0
 
@@ -44,7 +45,6 @@ async def _load_problems() -> dict[int, Problem]:
         return _problems[1]
     async with db.acquire() as conn:
         rows = await conn.fetch("SELECT * FROM public.problems WHERE is_active ORDER BY round_no")
-        points = await conn.fetchval("SELECT dsa_points FROM public.event_config")
         sample_rows = await conn.fetch(
             "SELECT problem_id, display_input, display_expected FROM public.problem_tests WHERE is_sample ORDER BY problem_id, ord"
         )
@@ -59,7 +59,7 @@ async def _load_problems() -> dict[int, Problem]:
             round=r["round_no"],
             title=r["title"],
             difficulty=r["difficulty"],
-            points=points,
+            points=DIFFICULTY_POINTS[r["difficulty"]],
             tags=r["tags"],
             description=r["description"],
             input_format=r["input_format"],

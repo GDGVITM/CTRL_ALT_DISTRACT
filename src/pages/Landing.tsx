@@ -185,7 +185,7 @@ export default function Landing() {
             </h2>
             <dl className="mt-6 divide-y divide-border-hairline border-y border-border-hairline">
               {[
-                ["Round points", `+${EVENT.dsaPoints} per solved round`],
+                ["Round points", `Easy +${EVENT.difficultyPoints.EASY} · Medium +${EVENT.difficultyPoints.MEDIUM} · Hard +${EVENT.difficultyPoints.HARD}`],
                 ["Distraction bonus", `+${EVENT.bonusPoints} per cleared interrupt`],
                 ["Tiebreak", "Lower total time ranks higher"],
               ].map(([dt, dd]) => (

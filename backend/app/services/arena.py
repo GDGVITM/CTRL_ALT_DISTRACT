@@ -407,7 +407,7 @@ async def questions(user_id: str) -> QuestionsResponse:
         attempt = attempts.get(number)
         solved = attempt is not None and attempt["status"] == "solved"
         items.append(QuestionItem(
-            round=number, title=problem.title, difficulty=problem.difficulty, points=ev["dsa_points"],
+            round=number, title=problem.title, difficulty=problem.difficulty, points=problem.points,
             status="solved" if solved else "unsolved",
             description=next((paragraph for paragraph in problem.description if paragraph.strip()), ""),
             in_progress=attempt is not None and attempt["status"] == "active",
@@ -658,7 +658,7 @@ async def submit(user_id: str, req: CodeRequest) -> SubmitResponse:
         if verdict == "accepted" and live_event["status"] == "live" and part["status"] != "finished" and current is not None and current["status"] == "active":
             scored = (
                 await _resolve_round(
-                    conn, ev, user_id, round_no, status="solved", time_ms=used_ms, points=ev["dsa_points"]
+                    conn, ev, user_id, round_no, status="solved", time_ms=used_ms, points=problem.public.points
                 )
                 is not None
             )

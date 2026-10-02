@@ -36,6 +36,7 @@ class EventInfo(CamelModel):
     round_seconds: None = None  # legacy fields: coding rounds have no time limit
     round_minutes: None = None
     dsa_points: int
+    difficulty_points: dict[Literal["EASY", "MEDIUM", "HARD"], int]
     bonus_points: int
     distraction_seconds: int
     languages: list[LanguageInfo]
