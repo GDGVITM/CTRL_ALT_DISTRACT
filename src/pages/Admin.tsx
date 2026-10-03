@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Play, Square, RotateCcw, Search, ShieldAlert, Check, X } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
@@ -9,6 +9,7 @@ import { RegistrationApprovals } from "../components/admin/RegistrationApprovals
 import { api, ApiError } from "../lib/api";
 import type { AdminOverview, Alert, LeaderboardEntry, ProctorType, Severity } from "../lib/types";
 import { useEvent, useRefreshEvent } from "../context/EventContext";
+import { useAuth } from "../context/AuthContext";
 import { cn } from "../lib/utils";
 
 const TYPE_LABEL: Record<ProctorType, string> = {
@@ -17,6 +18,7 @@ const TYPE_LABEL: Record<ProctorType, string> = {
   PASTE_BLOCKED: "Paste attempt blocked",
   MULTI_SESSION: "Second session opened",
   DISCONNECT: "Long disconnect",
+  RISK_CHEATING: "Risk: Cheating Practice",
 };
 
 const SEVERITY_META: Record<Severity, { label: string; icon: string; cls: string }> = {
@@ -40,6 +42,8 @@ function formatElapsed(ms: number) {
 type Confirm = null | "start" | "end";
 
 export default function Admin() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const event = useEvent();
   const refreshEvent = useRefreshEvent();
   const [confirm, setConfirm] = useState<Confirm>(null);
@@ -51,7 +55,10 @@ export default function Admin() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [freshIds, setFreshIds] = useState<Set<number>>(new Set());
   const [board, setBoard] = useState<{ entries: LeaderboardEntry[]; total: number }>({ entries: [], total: 0 });
+  const [showFullBoard, setShowFullBoard] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [sevFilter, setSevFilter] = useState<"all" | Severity>("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "RISK_CHEATING">("all");
   const [openOnly, setOpenOnly] = useState(false);
   const [query, setQuery] = useState("");
   const knownAlerts = useRef<Set<number> | null>(null);
@@ -85,12 +92,21 @@ export default function Admin() {
 
   const loadBoard = useCallback(async () => {
     try {
-      const r = await api.leaderboard(10);
+      const r = await api.leaderboard(showFullBoard ? undefined : 10);
       setBoard({ entries: r.entries, total: r.total });
     } catch {
       /* ignore transient failures */
     }
-  }, []);
+  }, [showFullBoard]);
+
+  const exitConsole = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   useEffect(() => {
     void loadOverview();
@@ -114,6 +130,7 @@ export default function Admin() {
 
   const filtered = alerts.filter(
     (v) =>
+      (categoryFilter === "all" || v.type === categoryFilter) &&
       (sevFilter === "all" || v.severity === sevFilter) &&
       (!openOnly || !v.acknowledged) &&
       (!query || v.player.toLowerCase().includes(query.toLowerCase())),
@@ -190,9 +207,9 @@ export default function Admin() {
           </div>
           <div className="flex items-center gap-4">
             {statusBadge}
-            <Link to="/" className="hidden font-body text-sm text-text-secondary hover:text-text-primary sm:inline">
-              Exit console
-            </Link>
+            <button type="button" onClick={() => void exitConsole()} disabled={signingOut} className="font-body text-sm text-text-secondary hover:text-text-primary disabled:opacity-60">
+              {signingOut ? "Signing out…" : "Exit console"}
+            </button>
           </div>
         </div>
       </header>
@@ -282,6 +299,17 @@ export default function Admin() {
                   className="h-10 w-full rounded-xs border border-border-default bg-bg-inset pl-9 pr-3 font-body text-sm text-text-primary placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
                 />
               </div>
+              <label className="flex items-center gap-2 font-body text-sm text-text-secondary">
+                Category
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as "all" | "RISK_CHEATING")}
+                  className="h-10 min-w-0 rounded-xs border border-border-default bg-bg-inset px-3 font-body text-sm text-text-primary focus:border-accent-cyan focus:outline-none"
+                >
+                  <option value="all">All activity</option>
+                  <option value="RISK_CHEATING">Risk: Cheating Practice</option>
+                </select>
+              </label>
               <div className="flex border border-border-default bg-bg-inset" role="group" aria-label="Severity filter">
                 {(["all", "high", "medium", "low"] as const).map((s) => (
                   <button
@@ -335,6 +363,11 @@ export default function Admin() {
                         )}
                       </div>
                       <p className="mt-1.5 font-body text-sm text-text-secondary">{v.detail}</p>
+                      {v.type === "RISK_CHEATING" && (
+                        <p className="mt-1 font-body text-xs text-warning">
+                          Potential risk — requires organizer review; not proof of cheating.
+                        </p>
+                      )}
                       <p className="mt-1 font-mono text-xs text-text-muted">
                         {v.player} · {v.playerId} · Round {v.round.toString().padStart(2, "0")} · {clock(v.createdAt)}
                       </p>
@@ -382,13 +415,13 @@ export default function Admin() {
               <h2 id="lb-title" className="font-display text-3xl text-text-primary">
                 Leaderboard
               </h2>
-              <Link to="/leaderboard" className="font-body text-sm text-accent-cyan hover:underline">
-                Full board →
-              </Link>
+              <button type="button" onClick={() => setShowFullBoard((current) => !current)} className="font-body text-sm text-accent-cyan hover:underline">
+                {showFullBoard ? "Top 10 →" : "Full board →"}
+              </button>
             </div>
             <LeaderboardTable rows={board.entries} />
             <p className="mt-3 font-body text-xs text-text-muted">
-              Top 10 of {board.total} players · {event.totalRounds} rounds
+              {showFullBoard ? "All" : "Top 10"} of {board.total} players · {event.totalRounds} rounds
             </p>
           </section>
         </div>

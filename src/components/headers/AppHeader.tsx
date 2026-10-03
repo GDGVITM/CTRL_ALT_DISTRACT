@@ -5,6 +5,7 @@ import { Logo } from "../Logo";
 import { StatusBadge } from "../ui/Badge";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../context/AuthContext";
+import { useCompetitionScreenGuard } from "../competition/CompetitionScreenGuard";
 
 export type EventBadgeState = "upcoming" | "joined" | "waiting" | "live" | "ended" | "finished";
 
@@ -24,8 +25,14 @@ export function AppHeader({ eventState = "waiting" }: { eventState?: EventBadgeS
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { fullName, initials, signOut } = useAuth();
+  const screenGuard = useCompetitionScreenGuard();
 
   const logOut = async () => {
+    if (screenGuard.active) {
+      setMenuOpen(false);
+      screenGuard.askToReturn("navigation");
+      return;
+    }
     await signOut();
     navigate("/login", { replace: true });
   };

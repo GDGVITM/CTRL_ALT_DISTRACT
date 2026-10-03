@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from ..db import db
 from ..schemas import EventInfo, LeaderboardResponse
@@ -27,7 +27,9 @@ async def get_event() -> EventInfo:
 
 @router.get("/leaderboard", response_model=LeaderboardResponse)
 async def get_leaderboard(
+    response: Response,
     viewer: Annotated[AuthUser | None, Depends(optional_user)],
     limit: Annotated[int | None, Query(ge=1, le=5000)] = None,
 ) -> LeaderboardResponse:
+    response.headers["Cache-Control"] = "private, no-store"
     return await people.leaderboard(viewer.id if viewer else None, limit)

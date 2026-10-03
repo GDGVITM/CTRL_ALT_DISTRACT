@@ -39,7 +39,8 @@ class ExitDatabase(RoundDatabase):
             self.statements.append((query, args))
             return self.ev.copy()
         if "public.profiles" in query:
-            return {"full_name": "Exit Test Player", "player_no": 1}
+            return {"full_name": "Exit Test Player", "player_no": 1,
+                    "role": "participant", "approval_status": "approved"}
         if "public.participations" in query and query.lstrip().startswith("SELECT") and self.part is None:
             return None
         if "public.round_attempts" in query and query.lstrip().startswith("SELECT") and self.attempt is None:
@@ -64,6 +65,7 @@ class ExitDatabase(RoundDatabase):
                 return []
             return [{
                 "rank": 1, "user_id": USER_ID, "full_name": "Exit Test Player", "player_no": 1,
+                "email": "exit.player@college.example",
                 **{key: self.part[key] for key in ("round_pts", "bonus_pts", "total_pts", "total_time_ms")},
             }]
         return await super().fetch(query, *args)
@@ -265,7 +267,7 @@ def test_exit_endpoint_requires_authentication():
 
 def test_exit_endpoint_keeps_scores_in_response(exit_db):
     app = create_app()
-    app.dependency_overrides[security.current_user] = lambda: security.AuthUser(USER_ID, "player@example.com", "participant")
+    app.dependency_overrides[security.require_participant] = lambda: security.AuthUser(USER_ID, "player@example.com", "participant")
 
     async def check():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:

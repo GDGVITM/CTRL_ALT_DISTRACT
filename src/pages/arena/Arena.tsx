@@ -19,6 +19,7 @@ import { cn } from "../../lib/utils";
 import { useEvent } from "../../context/EventContext";
 import { useAuth } from "../../context/AuthContext";
 import { useMe } from "../../context/MeContext";
+import { useCompetitionScreenGuard } from "../../components/competition/CompetitionScreenGuard";
 
 const SYNC_MS = 10_000; // state poll; doubles as the connectivity heartbeat
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -28,6 +29,7 @@ export default function Arena() {
   const EVENT = useEvent();
   const { user } = useAuth();
   const { refresh: refreshMe } = useMe();
+  const { locked: screenLocked, allowNavigation } = useCompetitionScreenGuard();
   const eventStatus = EVENT.status;
 
   // ---- server-owned state -------------------------------------------------------------------
@@ -171,10 +173,11 @@ export default function Arena() {
           if (s.finished) {
             participantFinished.current = true;
             void refreshMe();
-            navigate(s.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true });
+            allowNavigation(() => { void navigate(s.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true }); });
             return;
           }
           applyState(s, true);
+          void refreshMe();
           markOnline();
           if (s.round?.distraction.state === "active") {
             setDistraction(s.round.distraction.index);
@@ -184,7 +187,7 @@ export default function Arena() {
         } catch (err) {
           if (err instanceof ApiError && !err.isNetwork) {
             // Not joined, or the event is not running: the dashboard explains and routes from there.
-            navigate(err.code === "event_not_live" && eventStatus === "ended" ? "/complete?ended=1" : "/dashboard", { replace: true });
+            allowNavigation(() => { void navigate(err.code === "event_not_live" && eventStatus === "ended" ? "/complete?ended=1" : "/dashboard", { replace: true }); });
             return;
           }
           markOffline();
@@ -192,14 +195,14 @@ export default function Arena() {
         }
       }
     })();
-  }, [navigate, applyState, markOnline, markOffline, eventStatus, refreshMe]);
+  }, [navigate, applyState, markOnline, markOffline, eventStatus, refreshMe, allowNavigation]);
 
   // A second tab can finish participation. Never advance a finished player's round.
   useEffect(() => {
     if (!state?.finished || exitInProgress.current) return;
     void refreshMe();
-    navigate(state.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true });
-  }, [state?.finished, state?.eventStatus, exiting, navigate, refreshMe]);
+    allowNavigation(() => { void navigate(state.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true }); });
+  }, [state?.finished, state?.eventStatus, exiting, navigate, refreshMe, allowNavigation]);
 
   // The problem for the round in progress.
   const activeRound = state?.round?.round;
@@ -246,9 +249,9 @@ export default function Arena() {
     prevEventStatus.current = eventStatus;
     if (!endedNow || eventEnded) return;
     setEventEnded(true);
-    const t = setTimeout(() => navigate("/complete?ended=1"), 2000);
+    const t = setTimeout(() => allowNavigation(() => { void navigate("/complete?ended=1"); }), 2000);
     return () => clearTimeout(t);
-  }, [eventStatus, state?.eventStatus, eventEnded, navigate]);
+  }, [eventStatus, state?.eventStatus, eventEnded, navigate, allowNavigation]);
 
   // Active coding time only schedules distractions; questions have no countdown.
   useEffect(() => {
@@ -282,14 +285,15 @@ export default function Arena() {
     if (!transition || exitOpen || exiting || state?.finished) return;
     const timer = setTimeout(() => {
       if (!alive.current || exitInProgress.current || participantFinished.current) return;
-      if (transition.isFinal) navigate("/complete");
+      if (transition.isFinal) allowNavigation(() => { void navigate("/complete"); });
       else navigate("/questions", { replace: true });
     }, transition.isFinal ? 1600 : 2000);
     return () => clearTimeout(timer);
-  }, [transition, exitOpen, exiting, state?.finished, navigate]);
+  }, [transition, exitOpen, exiting, state?.finished, navigate, allowNavigation]);
 
   // ---- run / submit -------------------------------------------------------------------------
   const busy =
+    screenLocked ||
     selectingRound !== null ||
     exitOpen ||
     exiting ||
@@ -463,7 +467,7 @@ export default function Arena() {
     void syncState(); // pick up resumed active coding time from the server
   }
 
-  const exitDisabled = selectingRound !== null || exiting || !!transition || eventEnded || !!state?.finished ||
+  const exitDisabled = screenLocked || selectingRound !== null || exiting || !!transition || eventEnded || !!state?.finished ||
     runResult === "running" || submitResult === "submitting" || submitResult === "accepted";
 
   const questionsDisabled = exitDisabled || exitOpen || distraction !== null ||
@@ -522,7 +526,7 @@ export default function Arena() {
       applyState(next, true);
       await refreshMe();
       if (!alive.current) return;
-      navigate("/complete?exited=1", { replace: true });
+      allowNavigation(() => { void navigate("/complete?exited=1", { replace: true }); });
     } catch (err) {
       if (!alive.current) return;
       setExitError(err instanceof ApiError && !err.isNetwork
@@ -536,36 +540,7 @@ export default function Arena() {
 
   const locked = distraction !== null;
 
-  // ---- proctoring: report leaving the tab / full screen -------------------------------------
-  useEffect(() => {
-    if (eventStatus !== "live" || state?.finished) return;
-    let awayAt: number | null = null;
-    let wasFullscreen = !!document.fullscreenElement;
-    const away = () => {
-      if (awayAt === null) awayAt = Date.now();
-    };
-    const back = () => {
-      if (awayAt === null) return;
-      const seconds = Math.round((Date.now() - awayAt) / 1000);
-      awayAt = null;
-      if (seconds >= 2) api.reportProctor("TAB_SWITCH", seconds).catch(() => undefined);
-    };
-    const onVisibility = () => (document.visibilityState === "hidden" ? away() : back());
-    const onFullscreen = () => {
-      if (wasFullscreen && !document.fullscreenElement) api.reportProctor("FULLSCREEN_EXIT").catch(() => undefined);
-      wasFullscreen = !!document.fullscreenElement;
-    };
-    window.addEventListener("blur", away);
-    window.addEventListener("focus", back);
-    document.addEventListener("visibilitychange", onVisibility);
-    document.addEventListener("fullscreenchange", onFullscreen);
-    return () => {
-      window.removeEventListener("blur", away);
-      window.removeEventListener("focus", back);
-      document.removeEventListener("visibilitychange", onVisibility);
-      document.removeEventListener("fullscreenchange", onFullscreen);
-    };
-  }, [eventStatus, state?.finished]);
+  // Fullscreen/focus policy and its organizer-review log are owned by CompetitionPolicy.
 
   if (!state) {
     return (
@@ -676,8 +651,8 @@ export default function Arena() {
             <div className={cn("min-h-0 flex-1", mobileTab === "RESULTS" && "hidden lg:block")}>
               <CodeEditor
                 key={round}
-                locked={selectingRound !== null || submitResult === "submitting" || exitOpen || exiting || !!state.finished || problem?.round !== round}
-                lockedMessage={selectingRound !== null || problem?.round !== round ? "Opening question…" : undefined}
+                locked={screenLocked || selectingRound !== null || submitResult === "submitting" || exitOpen || exiting || !!state.finished || problem?.round !== round}
+                lockedMessage={screenLocked ? "Return to fullscreen to continue coding" : selectingRound !== null || problem?.round !== round ? "Opening question…" : undefined}
                 errorLine={errorLine}
                 focusLine={focusLine}
                 problem={problem}
@@ -718,7 +693,7 @@ export default function Arena() {
                   setMobileTab("CODE");
                   setFocusLine({ line, nonce: Date.now() });
                 }}
-                disabled={selectingRound !== null || connection === "offline" || locked || !!transition || !roundActive || problem?.round !== round || editorReadyRound !== round || exitOpen || exiting || state.finished || eventEnded}
+                disabled={screenLocked || selectingRound !== null || connection === "offline" || locked || !!transition || !roundActive || problem?.round !== round || editorReadyRound !== round || exitOpen || exiting || state.finished || eventEnded}
               />
             </div>
           </div>

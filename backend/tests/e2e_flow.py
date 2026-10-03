@@ -52,6 +52,8 @@ async def make_user(conn, name: str, prefix: str = "e2e") -> str:
         "'authenticated', 'authenticated', $2, '', '{}'::jsonb, jsonb_build_object('full_name', $3::text), now(), now())",
         uid, f"{prefix}-{uid[:8]}@{DOMAIN}", name,
     )
+    # These isolated fixture accounts represent already approved competitors.
+    await conn.execute("UPDATE public.profiles SET approval_status = 'approved' WHERE id = $1::uuid", uid)
     return uid
 
 
@@ -250,6 +252,8 @@ async def main(pdf: str | None = None) -> int:
         check("results: totals, solved rounds and distractions", res["total"] == 1050 and res["bonus"] == 50 and res["solved"] == 10 and res["rounds"] == [1] * 10, res)
         check("results: name is real, time formatted", res["fullName"] == "Ada Lovelace" and len(res["timeTaken"]) == 8, res)
         r = await call("POST", "/api/participant/join", root)
+        check("admin cannot join as a player", r.status_code == 403 and r.json()["error"] == "participant_only", r.text)
+        r = await call("POST", "/api/participant/join", ada)
         check("joining after the end is refused", r.status_code == 409, r.text)
         check("event cannot be ended twice", (await call("POST", "/api/admin/event/end", root)).status_code == 409)
     finally:

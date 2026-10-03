@@ -50,9 +50,14 @@ function buildSections(EVENT: EventInfo) {
     body: "Play fair. No sharing solutions, no external help, no multiple accounts. Organizers may disqualify participants who violate these rules.",
   },
   {
+    id: "screen-policy",
+    title: "Fullscreen and screen policy",
+    body: "Keep the challenge in fullscreen and stay on the competition tab. Exiting fullscreen, switching tabs or applications, or attempting to navigate away shows a warning and records a Risk: Cheating Practice alert for organizer review. Select Return to Challenge to restore fullscreen and continue. Your participation, saved work, and earned points remain active. A risk alert is not proof of cheating and does not automatically disqualify you. Your recorded participation time continues while you are away.",
+  },
+  {
     id: "before-you-start",
     title: "Before you start",
-    body: "Use a desktop or laptop. Keep this tab open and in focus. Don't refresh during a round.",
+    body: "Use a desktop or laptop with a browser that supports fullscreen. Keep this tab open and in focus. Don't refresh during a round.",
   },
   ];
 }

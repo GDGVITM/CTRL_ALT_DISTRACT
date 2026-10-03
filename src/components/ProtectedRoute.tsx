@@ -6,9 +6,10 @@ import { PixelSpinner } from "./ui/Button";
 interface ProtectedRouteProps {
   children: ReactNode;
   adminOnly?: boolean;
+  publicAccess?: boolean;
 }
 
-export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, adminOnly = false, publicAccess = false }: ProtectedRouteProps) {
   const { user, role, profile, approvalStatus, loading } = useAuth();
   const location = useLocation();
 
@@ -25,6 +26,17 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
         </div>
       </div>
     );
+  }
+
+  if (user && role === "admin" && !adminOnly) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (publicAccess) {
+    if (user && !profile) {
+      return <Navigate to="/login" state={{ approvalStatus: "unavailable" }} replace />;
+    }
+    return <>{children}</>;
   }
 
   if (!user) {

@@ -194,7 +194,8 @@ export interface DistractionResolveResponse {
   participant: ParticipantSummary;
 }
 
-export type ProctorType = "TAB_SWITCH" | "FULLSCREEN_EXIT" | "PASTE_BLOCKED" | "MULTI_SESSION" | "DISCONNECT";
+export type ProctorType = "TAB_SWITCH" | "FULLSCREEN_EXIT" | "PASTE_BLOCKED" | "MULTI_SESSION" | "DISCONNECT" | "RISK_CHEATING";
+export type PolicyRiskReason = "fullscreen" | "focus" | "visibility" | "navigation";
 export type Severity = "high" | "medium" | "low";
 
 export interface Alert {
@@ -213,6 +214,7 @@ export interface LeaderboardEntry {
   rank: number;
   id: string;
   name: string;
+  email: string | null;
   initials: string;
   roundPts: number;
   bonus: number;

@@ -106,7 +106,14 @@ async def current_user(user: Annotated[AuthUser | None, Depends(optional_user)])
     return user
 
 
-async def require_approved_account(user_id: str) -> None:
+async def require_participant(user: Annotated[AuthUser | None, Depends(optional_user)]) -> AuthUser:
+    if user is None:
+        raise _unauthorized("Missing Authorization header")
+    await require_approved_account(user.id, participant_only=True)
+    return user
+
+
+async def require_approved_account(user_id: str, *, participant_only: bool = False) -> None:
     # Query on every protected request: a stale JWT must not bypass account review.
     async with db.acquire() as conn:
         profile = await conn.fetchrow(
@@ -114,6 +121,8 @@ async def require_approved_account(user_id: str) -> None:
         )
     if profile is None:
         raise ApiError(403, "account_unavailable", "Your account profile could not be verified.")
+    if participant_only and profile["role"] != "participant":
+        raise ApiError(403, "participant_only", "Admin accounts cannot participate. Use the admin console.")
     if profile["role"] == "admin" or profile["approval_status"] == "approved":
         return
     if profile["approval_status"] == "rejected":
