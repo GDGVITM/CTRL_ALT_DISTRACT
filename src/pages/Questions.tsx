@@ -6,6 +6,8 @@ import { Button, PixelSpinner } from "../components/ui/Button";
 import { api, ApiError } from "../lib/api";
 import type { ArenaQuestion, ArenaQuestionsResponse, Difficulty } from "../lib/types";
 import { cn, difficultyClasses } from "../lib/utils";
+import { useCompetitionScreenGuard } from "../components/competition/CompetitionScreenGuard";
+import { useMe } from "../context/MeContext";
 
 type QuestionStatus = ArenaQuestion["status"];
 
@@ -27,6 +29,8 @@ function toggleValue<T>(values: T[], value: T): T[] {
 
 export default function Questions() {
   const navigate = useNavigate();
+  const { locked: screenLocked, allowNavigation } = useCompetitionScreenGuard();
+  const { refresh: refreshMe } = useMe();
   const [data, setData] = useState<ArenaQuestionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +57,11 @@ export default function Questions() {
       if (!mounted.current || selectionPending.current) return;
       setData(next);
       setError(null);
+      if (state.finished || next.finished) void refreshMe();
     } catch (err) {
       if (!mounted.current || selectionPending.current) return;
       if (err instanceof ApiError && ["not_joined", "participation_required"].includes(err.code)) {
-        navigate("/dashboard", { replace: true });
+        allowNavigation(() => { void navigate("/dashboard", { replace: true }); });
         return;
       }
       setError(err instanceof ApiError && !err.isNetwork ? err.message : "Could not load your questions. Check your connection and try again.");
@@ -64,7 +69,7 @@ export default function Questions() {
       fetching.current = false;
       if (mounted.current) setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, allowNavigation, refreshMe]);
 
   useEffect(() => {
     mounted.current = true;
@@ -84,7 +89,7 @@ export default function Questions() {
     (!difficulties.length || difficulties.includes(question.difficulty)),
   ), [data?.items, statuses, difficulties]);
   const current = data?.items.find((question) => question.round === data.participant.currentRound && question.inProgress && question.status === "unsolved");
-  const canSelect = !!data && !data.finished && data.eventStatus === "live";
+  const canSelect = !screenLocked && !!data && !data.finished && data.eventStatus === "live";
 
   async function selectQuestion(question: ArenaQuestion) {
     if (!canSelect || question.status === "solved" || selectionPending.current) return;
@@ -95,7 +100,7 @@ export default function Questions() {
       const next = await api.arena.select(question.round);
       if (!mounted.current) return;
       if (next.finished) {
-        navigate(next.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true });
+        allowNavigation(() => { void navigate(next.eventStatus === "ended" ? "/complete?ended=1" : "/complete", { replace: true }); });
         return;
       }
       navigate("/arena");

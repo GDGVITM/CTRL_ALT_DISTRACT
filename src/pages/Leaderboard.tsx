@@ -8,11 +8,15 @@ import { api } from "../lib/api";
 import type { LeaderboardEntry } from "../lib/types";
 import { cn, padScore } from "../lib/utils";
 import { useEvent } from "../context/EventContext";
+import { useAuth } from "../context/AuthContext";
 
 const PAGE_SIZE = 15;
 
 export default function Leaderboard() {
   const { status } = useEvent();
+  const { user, role, approvalStatus } = useAuth();
+  const viewerId = user?.id;
+  const canViewEmails = !!user && (role === "admin" || approvalStatus === "approved");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [query, setQuery] = useState("");
   const [filterTop10, setFilterTop10] = useState(false);
@@ -34,14 +38,15 @@ export default function Leaderboard() {
       alive = false;
       clearInterval(t);
     };
-  }, [status]);
+  }, [status, viewerId, role, approvalStatus]);
 
   const rows = useMemo(() => {
     let r = entries;
-    if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+    const search = query.trim().toLowerCase();
+    if (search) r = r.filter((p) => p.name.toLowerCase().includes(search) || (canViewEmails && p.email?.toLowerCase().includes(search)));
     if (filterTop10) r = r.slice(0, 10);
     return r;
-  }, [entries, query, filterTop10]);
+  }, [entries, query, filterTop10, canViewEmails]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -116,7 +121,8 @@ export default function Leaderboard() {
                   setQuery(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search player…"
+                aria-label="Search players by name or email"
+                placeholder="Search name or email…"
                 className="h-10 w-full rounded-xs border border-border-default bg-bg-inset pl-9 pr-3 font-body text-sm text-text-primary placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
               />
             </div>
@@ -156,7 +162,7 @@ export default function Leaderboard() {
                 <th className="w-20 px-4 py-3 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Rank
                 </th>
-                <th className="px-4 py-3 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
+                <th className="min-w-[200px] px-4 py-3 text-left font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
                   Player
                 </th>
                 <th className="px-4 py-3 text-right font-label text-[16px] uppercase tracking-[0.04em] text-text-muted">
@@ -193,14 +199,17 @@ export default function Leaderboard() {
                       padScore(r.rank, 2)
                     )}
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="min-w-[200px] px-4 py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-xs bg-bg-elevated font-mono text-[10px] font-bold text-text-secondary">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xs bg-bg-elevated font-mono text-[10px] font-bold text-text-secondary">
                         {r.initials}
                       </span>
-                      <span className="font-body text-sm font-medium text-text-primary">{r.name}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words font-body text-sm font-medium text-text-primary">{r.name}</p>
+                        {canViewEmails && r.email && <p className="mt-0.5 break-all font-body text-xs text-text-secondary">{r.email}</p>}
+                      </div>
                       {r.self && (
-                        <span className="rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[14px] text-accent-yellow">
+                        <span className="shrink-0 rounded-xs border border-accent-yellow px-1.5 py-0.5 font-label text-[14px] text-accent-yellow">
                           YOU
                         </span>
                       )}
@@ -227,7 +236,7 @@ export default function Leaderboard() {
                       "No scores yet. Players appear here once they start a round."
                     ) : (
                       <>
-                        No player named "{query}".{" "}
+                        No player matches "{query}" by name or email.{" "}
                         <button onClick={() => setQuery("")} className="text-accent-cyan hover:underline">
                           Clear search
                         </button>

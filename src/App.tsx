@@ -14,6 +14,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { EventProvider } from "./context/EventContext";
 import { MeProvider } from "./context/MeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { CompetitionPolicy } from "./components/competition/CompetitionPolicy";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,6 +29,7 @@ export default function App() {
     <AuthProvider>
       <MeProvider>
       <EventProvider>
+      <CompetitionPolicy>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -89,6 +91,7 @@ export default function App() {
 
         <Route path="*" element={<ProtectedRoute publicAccess><NotFound /></ProtectedRoute>} />
       </Routes>
+      </CompetitionPolicy>
       </EventProvider>
       </MeProvider>
     </AuthProvider>

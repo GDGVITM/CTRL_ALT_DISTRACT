@@ -18,6 +18,7 @@ const TYPE_LABEL: Record<ProctorType, string> = {
   PASTE_BLOCKED: "Paste attempt blocked",
   MULTI_SESSION: "Second session opened",
   DISCONNECT: "Long disconnect",
+  RISK_CHEATING: "Risk: Cheating Practice",
 };
 
 const SEVERITY_META: Record<Severity, { label: string; icon: string; cls: string }> = {
@@ -57,6 +58,7 @@ export default function Admin() {
   const [showFullBoard, setShowFullBoard] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [sevFilter, setSevFilter] = useState<"all" | Severity>("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "RISK_CHEATING">("all");
   const [openOnly, setOpenOnly] = useState(false);
   const [query, setQuery] = useState("");
   const knownAlerts = useRef<Set<number> | null>(null);
@@ -128,6 +130,7 @@ export default function Admin() {
 
   const filtered = alerts.filter(
     (v) =>
+      (categoryFilter === "all" || v.type === categoryFilter) &&
       (sevFilter === "all" || v.severity === sevFilter) &&
       (!openOnly || !v.acknowledged) &&
       (!query || v.player.toLowerCase().includes(query.toLowerCase())),
@@ -296,6 +299,17 @@ export default function Admin() {
                   className="h-10 w-full rounded-xs border border-border-default bg-bg-inset pl-9 pr-3 font-body text-sm text-text-primary placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
                 />
               </div>
+              <label className="flex items-center gap-2 font-body text-sm text-text-secondary">
+                Category
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as "all" | "RISK_CHEATING")}
+                  className="h-10 min-w-0 rounded-xs border border-border-default bg-bg-inset px-3 font-body text-sm text-text-primary focus:border-accent-cyan focus:outline-none"
+                >
+                  <option value="all">All activity</option>
+                  <option value="RISK_CHEATING">Risk: Cheating Practice</option>
+                </select>
+              </label>
               <div className="flex border border-border-default bg-bg-inset" role="group" aria-label="Severity filter">
                 {(["all", "high", "medium", "low"] as const).map((s) => (
                   <button
@@ -349,6 +363,11 @@ export default function Admin() {
                         )}
                       </div>
                       <p className="mt-1.5 font-body text-sm text-text-secondary">{v.detail}</p>
+                      {v.type === "RISK_CHEATING" && (
+                        <p className="mt-1 font-body text-xs text-warning">
+                          Potential risk — requires organizer review; not proof of cheating.
+                        </p>
+                      )}
                       <p className="mt-1 font-mono text-xs text-text-muted">
                         {v.player} · {v.playerId} · Round {v.round.toString().padStart(2, "0")} · {clock(v.createdAt)}
                       </p>

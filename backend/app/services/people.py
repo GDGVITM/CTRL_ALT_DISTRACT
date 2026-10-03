@@ -88,7 +88,7 @@ async def _ranked() -> list[dict]:
         rows = await conn.fetch(
             """
             SELECT row_number() OVER (ORDER BY pa.total_pts DESC, pa.total_time_ms ASC, pa.joined_at ASC) AS rank,
-                   pa.user_id::text AS user_id, p.full_name, p.player_no,
+                   pa.user_id::text AS user_id, p.full_name, p.email, p.player_no,
                    pa.round_pts, pa.bonus_pts, pa.total_pts, pa.total_time_ms
             FROM public.participations pa JOIN public.profiles p ON p.id = pa.user_id
             WHERE pa.status <> 'joined' AND p.role = 'participant'
@@ -102,6 +102,18 @@ async def _ranked() -> list[dict]:
 
 async def leaderboard(viewer_id: str | None, limit: int | None) -> LeaderboardResponse:
     ranked = await _ranked()
+    show_emails = False
+    if viewer_id is not None:
+        # Check current approval on every request, even when the ranking is cached.
+        async with db.acquire() as conn:
+            viewer = await conn.fetchrow(
+                "SELECT role::text AS role, approval_status FROM public.profiles WHERE id = $1::uuid",
+                viewer_id,
+            )
+        show_emails = bool(viewer and (
+            viewer["role"] == "admin"
+            or (viewer["role"] == "participant" and viewer["approval_status"] == "approved")
+        ))
     ev = await event_service.get_event()
     chosen = ranked if limit is None else ranked[:limit]
     entries = []
@@ -112,6 +124,7 @@ async def leaderboard(viewer_id: str | None, limit: int | None) -> LeaderboardRe
                 rank=r["rank"],
                 id=player_code(r["player_no"]),
                 name=name,
+                email=r["email"] if show_emails else None,
                 initials=initials(name),
                 round_pts=r["round_pts"],
                 bonus=r["bonus_pts"],

@@ -42,5 +42,5 @@ async def get_results(user: User) -> ResultsResponse:
 
 @router.post("/proctor/events", status_code=204)
 async def report_proctor_event(body: ProctorEventRequest, user: User) -> Response:
-    await proctor.report(user.id, body.type, body.seconds)
+    await proctor.report(user.id, body.type, body.seconds, risk_reason=body.risk_reason)
     return Response(status_code=204)

@@ -13,6 +13,7 @@ import type {
   Me,
   Problem,
   ProctorType,
+  PolicyRiskReason,
   Results,
   Registration,
   RegistrationsResponse,
@@ -93,8 +94,8 @@ export const api = {
   results: () => get<Results>("/api/results/me"),
   leaderboard: (limit?: number) =>
     get<LeaderboardResponse>(`/api/leaderboard${limit ? `?limit=${limit}` : ""}`),
-  reportProctor: (type: ProctorType, seconds?: number) =>
-    post<void>("/api/proctor/events", { type, seconds }),
+  reportProctor: (type: ProctorType, seconds?: number, riskReason?: PolicyRiskReason) =>
+    post<void>("/api/proctor/events", { type, seconds, riskReason }),
 
   arena: {
     state: () => get<ArenaState>("/api/arena/state"),
