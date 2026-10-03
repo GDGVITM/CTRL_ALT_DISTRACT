@@ -23,6 +23,7 @@ from app.errors import ApiError
 from app.main import create_app
 from app.schemas import CodeRequest, DistractionResolveRequest, ProblemPublic
 from app.services import arena, catalog, event, people, proctor
+from app.services.scoring import DIFFICULTY_POINTS
 from tests.test_unlimited_rounds import USER_ID, accepted
 
 pytestmark = pytest.mark.skipif(
@@ -108,10 +109,11 @@ async def isolated_db(monkeypatch):
             yield
 
         async def problem(problem_id):
+            difficulty = ("EASY", "MEDIUM", "HARD")[(problem_id - 1) % 3]
             public = ProblemPublic(
                 round=problem_id, title=f"Question {problem_id}",
-                difficulty=("EASY", "MEDIUM", "HARD")[(problem_id - 1) % 3],
-                points=100, tags=[], description=[f"Public statement {problem_id}"],
+                difficulty=difficulty,
+                points=DIFFICULTY_POINTS[difficulty], tags=[], description=[f"Public statement {problem_id}"],
                 input_format="An integer", output_format="An integer", examples=[],
                 constraints=[], hints=[], samples=[], starter_code={"python": "pass"},
             )
@@ -172,11 +174,13 @@ async def test_switch_resume_accumulates_active_time_and_keeps_distraction_sched
 
 @pytest.mark.asyncio
 async def test_solve_question_ten_first_then_remaining_questions_and_score_once(isolated_db):
+    expected_points = 0
     for index, number in enumerate([10, 3, 8, 1, 9, 2, 7, 4, 6, 5], start=1):
+        expected_points += (100, 150, 200)[(number - 1) % 3]
         await arena.select_question(USER_ID, number)
         result = await arena.submit(USER_ID, CodeRequest(language="python", code="print(42)", round=number))
         assert result.round == number and result.result == "accepted"
-        assert result.participant.solved_count == index and result.participant.round_pts == index * 100
+        assert result.participant.solved_count == index and result.participant.round_pts == expected_points
         assert (result.participant.status == "finished") == (index == 10)
         if index < 10:
             with pytest.raises(ApiError) as exc:

@@ -1,16 +1,16 @@
-import { useEvent } from "../../context/EventContext";
 import { cn } from "../../lib/utils";
 
 export function RoundTransition({
   round,
   variant,
   isFinal,
+  points,
 }: {
   round: number;
   variant: "clear" | "closed";
   isFinal: boolean;
+  points: number | undefined;
 }) {
-  const EVENT = useEvent();
   return (
     <div className="crt-scanlines absolute inset-0 z-transition flex flex-col items-center justify-center bg-black/94" role="status" aria-live="assertive">
       <span className="font-label text-lg uppercase tracking-[0.04em] text-text-muted">
@@ -25,8 +25,8 @@ export function RoundTransition({
         {variant === "clear" ? "CLEAR" : "ROUND CLOSED"}
       </span>
       {variant === "clear" ? (
-        <span className="mt-3 font-mono text-2xl font-bold text-accent-yellow">
-          +{EVENT.dsaPoints}
+        points !== undefined && <span className="mt-3 font-mono text-2xl font-bold text-accent-yellow">
+          +{points}
         </span>
       ) : (
         <span className="mt-3 font-body text-text-secondary">No points for this round.</span>

@@ -225,7 +225,7 @@ def test_finished_participant_cannot_resume_or_submit(exit_db, operation):
 def test_in_flight_accepted_judge_cannot_award_points_after_exit(exit_db, monkeypatch):
     async def judge(attempt, req, **kwargs):
         await arena.exit_challenge(USER_ID)
-        return SimpleNamespace(id=7), [], accepted()
+        return SimpleNamespace(id=7, public=SimpleNamespace(points=100)), [], accepted()
 
     monkeypatch.setattr(arena, "_judge", judge)
     result = run(arena.submit(USER_ID, CodeRequest(language="python", code="print(42)")))
@@ -237,7 +237,7 @@ def test_in_flight_accepted_judge_cannot_award_points_after_exit(exit_db, monkey
 
 def test_accepted_submit_before_exit_keeps_earned_score(exit_db, monkeypatch):
     async def judge(attempt, req, **kwargs):
-        return SimpleNamespace(id=7), [], accepted()
+        return SimpleNamespace(id=7, public=SimpleNamespace(points=100)), [], accepted()
 
     monkeypatch.setattr(arena, "_judge", judge)
 

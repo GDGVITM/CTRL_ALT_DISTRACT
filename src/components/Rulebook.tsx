@@ -26,7 +26,7 @@ function buildSections(EVENT: EventInfo) {
   {
     id: "running-submitting",
     title: "Running and submitting",
-    body: "RUN tests your code against the sample cases. SUBMIT checks it against the full test set. A correct submission clears the round.",
+    body: `RUN tests your code against the sample cases. SUBMIT checks it against the full test set. A correct submission clears the round and earns ${EVENT.difficultyPoints.EASY} points for Easy, ${EVENT.difficultyPoints.MEDIUM} for Medium, or ${EVENT.difficultyPoints.HARD} for Hard.`,
   },
   {
     id: "distractions",
