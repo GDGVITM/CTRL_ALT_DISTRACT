@@ -1,0 +1,631 @@
+/* ==========================================================================
+   CTRL ALT DISTRACT - INTRO & KEYBOARD INTERACTION SYSTEM
+   ========================================================================== */
+
+/* Fullscreen Experience Wrapper */
+.experience-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+/* ==========================================================================
+   1. INTRO SCREEN
+   ========================================================================== */
+.intro-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: var(--space-xl);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.intro-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96);
+}
+
+/* Corner Technical Markings */
+.hud-corner {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hud-corner.top-left {
+  top: 28px;
+  left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-corner.top-right {
+  top: 28px;
+  right: 32px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-corner.bottom-left {
+  bottom: 28px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-corner.bottom-right {
+  bottom: 28px;
+  right: 32px;
+  text-align: right;
+}
+
+.hud-corner .accent-txt {
+  color: var(--accent-yellow);
+}
+
+/* Intro Center Card */
+.intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 580px;
+  width: 100%;
+  position: relative;
+}
+
+.sys-init-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--accent-yellow);
+  letter-spacing: 0.12em;
+  margin-bottom: 24px;
+  padding: 4px 12px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 0 12px rgba(255, 212, 59, 0.08);
+}
+
+.sys-init-tag .tag-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-yellow);
+  box-shadow: 0 0 8px var(--accent-yellow);
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+.intro-heading-main {
+  font-family: var(--font-pixel);
+  font-size: clamp(32px, 6vw, 54px);
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  text-shadow: 0 0 20px rgba(242, 242, 242, 0.15);
+}
+
+.intro-heading-sub {
+  font-family: var(--font-pixel);
+  font-size: clamp(14px, 2.5vw, 20px);
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+}
+
+/* Large Arcade START Button */
+.intro-start-btn {
+  font-size: 15px;
+  padding: 18px 48px;
+  min-width: 220px;
+  letter-spacing: 0.12em;
+  position: relative;
+  overflow: visible;
+}
+
+.intro-start-btn::after {
+  content: '▼';
+  position: absolute;
+  bottom: -22px;
+  font-size: 8px;
+  color: var(--accent-yellow);
+  opacity: 0.7;
+  animation: bounceDown 1.4s infinite ease-in-out;
+}
+
+@keyframes bounceDown {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+
+.intro-hint {
+  margin-top: 36px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   2. KEYBOARD STAGE
+   ========================================================================== */
+.keyboard-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 16px;
+}
+
+.keyboard-stage.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Header Telemetry Bar */
+.stage-telemetry-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(960px, 92vw);
+  margin-bottom: 12px;
+  padding: 6px 14px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-medium);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.stage-telemetry-bar .proto-name {
+  color: var(--accent-yellow);
+}
+
+.stage-telemetry-bar .stage-leds {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage-led {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.stage-led .led-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--bg-surface-3);
+  border: 1px solid var(--border-medium);
+  transition: all 0.3s ease;
+}
+
+.stage-led.unlocked {
+  color: var(--accent-yellow);
+}
+
+.stage-led.unlocked .led-pip {
+  background: var(--accent-yellow);
+  box-shadow: 0 0 8px var(--accent-yellow);
+  border-color: #ffe066;
+}
+
+/* Keyboard Main Frame Chassis */
+.keyboard-chassis {
+  position: relative;
+  width: min(960px, 92vw);
+  aspect-ratio: 1024 / 576;
+  max-height: calc(100vh - 170px);
+  max-width: calc((100vh - 170px) * (1024 / 576));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* HUD Grid & Line Overlay */
+.keyboard-hud-grid {
+  position: absolute;
+  inset: -15px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Corner Crosshairs */
+.hud-cross {
+  position: absolute;
+  color: var(--accent-yellow);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.7;
+}
+.hud-cross.tl { top: 0; left: 0; }
+.hud-cross.tr { top: 0; right: 0; }
+.hud-cross.bl { bottom: 0; left: 0; }
+.hud-cross.br { bottom: 0; right: 0; }
+
+/* The Keyboard Visual Layer Wrapper */
+.keyboard-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000000;
+  border-radius: 4px;
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.95);
+}
+
+/* Keyboard Images (Base and Lit) */
+.keyboard-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.keyboard-img.base {
+  z-index: 2;
+}
+
+.keyboard-img.lit-full {
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+/* Individual Key Lit Layers */
+.key-lit-layer {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+
+.key-lit-layer.active {
+  opacity: 1;
+}
+
+/* Precise Subpixel Positioning for CTRL, ALT, D */
+.key-lit-layer.key-ctrl {
+  left: 0.9765%;
+  top: 65.9722%;
+  width: 14.6484%;
+  height: 31.25%;
+}
+
+.key-lit-layer.key-alt {
+  left: 15.4297%;
+  top: 65.9722%;
+  width: 12.8906%;
+  height: 31.25%;
+}
+
+.key-lit-layer.key-d {
+  left: 20.0195%;
+  top: 40.7986%;
+  width: 11.7188%;
+  height: 26.0417%;
+}
+
+.key-lit-layer img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Interactive Hitboxes (Click / Touch) */
+.key-hitbox {
+  position: absolute;
+  z-index: 10;
+  cursor: pointer;
+  background: rgba(255, 212, 59, 0);
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.key-hitbox:hover {
+  background: rgba(255, 212, 59, 0.08);
+  border-color: rgba(255, 212, 59, 0.3);
+}
+
+.key-hitbox:active {
+  background: rgba(255, 212, 59, 0.2);
+}
+
+.key-hitbox.hit-ctrl {
+  left: 5.5%;
+  top: 77.5%;
+  width: 7.8%;
+  height: 14.5%;
+}
+
+.key-hitbox.hit-alt {
+  left: 17.8%;
+  top: 77.5%;
+  width: 8.2%;
+  height: 14.5%;
+}
+
+.key-hitbox.hit-d {
+  left: 23.3%;
+  top: 46.5%;
+  width: 6.2%;
+  height: 13.0%;
+}
+
+/* Ambient Screen Sweep / Scanline Effect over the keyboard */
+.keyboard-crt-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 212, 59, 0.02) 50%,
+    transparent 100%
+  );
+  height: 20%;
+  pointer-events: none;
+  z-index: 5;
+  animation: crtScanSweep 4s linear infinite;
+}
+
+@keyframes crtScanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(600%); }
+}
+
+/* Bottom Controller & Instructions Banner */
+.stage-instruction-box {
+  width: min(960px, 92vw);
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  padding: 10px 18px;
+}
+
+.instruction-prompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-badge-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--accent-yellow);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-bright);
+  padding: 3px 8px;
+}
+
+.status-badge-live .pulse-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--accent-yellow);
+  box-shadow: 0 0 6px var(--accent-yellow);
+  animation: blink 0.8s infinite;
+}
+
+.instruction-text {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.instruction-text .key-token {
+  display: inline-block;
+  color: var(--accent-yellow);
+  padding: 1px 4px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface-2);
+  margin: 0 2px;
+}
+
+.instruction-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.combo-counter-box {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.combo-counter-box .combo-num {
+  color: var(--accent-yellow);
+  font-size: 11px;
+}
+
+/* Touch Device Action Button */
+.touch-trigger-btn {
+  display: none;
+  padding: 8px 14px;
+  font-size: 9px;
+  border-width: 1px;
+}
+
+@media (hover: none), (max-width: 768px) {
+  .touch-trigger-btn {
+    display: inline-flex;
+  }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .stage-instruction-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .instruction-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hud-corner {
+    display: none;
+  }
+
+  .stage-telemetry-bar {
+    font-size: 8px;
+  }
+}
+
+/* ==========================================================================
+   3. DRAMATIC CRT GLITCH TRANSITION
+   ========================================================================== */
+.glitch-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  background: #000000;
+  overflow: hidden;
+}
+
+.glitch-transition-overlay.active {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* Rapid Glitch Flash */
+.glitch-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-yellow);
+  opacity: 0;
+}
+
+.glitch-transition-overlay.active .glitch-flash {
+  animation: glitchFlashAnim 0.75s ease-out forwards;
+}
+
+@keyframes glitchFlashAnim {
+  0% { opacity: 0; }
+  10% { opacity: 0.95; }
+  25% { opacity: 0.2; }
+  35% { opacity: 0.8; }
+  50% { opacity: 0.1; }
+  75% { opacity: 0.6; }
+  90% { opacity: 0.05; }
+  100% { opacity: 1; background: #050505; }
+}
+
+/* Horizontal Slice Tears */
+.glitch-slice {
+  position: absolute;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 212, 59, 0.8);
+  opacity: 0;
+}
+
+.glitch-transition-overlay.active .glitch-slice-1 {
+  top: 25%;
+  animation: sliceAnim1 0.7s infinite;
+}
+
+.glitch-transition-overlay.active .glitch-slice-2 {
+  top: 55%;
+  height: 18px;
+  background: #ffffff;
+  animation: sliceAnim2 0.7s infinite;
+}
+
+.glitch-transition-overlay.active .glitch-slice-3 {
+  top: 75%;
+  height: 12px;
+  animation: sliceAnim1 0.5s infinite reverse;
+}
+
+@keyframes sliceAnim1 {
+  0% { transform: translateX(-100%); opacity: 0.8; }
+  30% { transform: translateX(20%); opacity: 0.9; }
+  60% { transform: translateX(-40%); opacity: 0.4; }
+  100% { transform: translateX(100%); opacity: 0.8; }
+}
+
+@keyframes sliceAnim2 {
+  0% { transform: translateX(100%); opacity: 0.9; }
+  50% { transform: translateX(-30%); opacity: 0.7; }
+  100% { transform: translateX(-100%); opacity: 0.9; }
+}
+
+/* CRT Power Pinch Line */
+.crt-pinch-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 15px #ffffff, 0 0 30px var(--accent-yellow);
+  opacity: 0;
+  transform: translateY(-50%) scaleY(1);
+}
+
+.glitch-transition-overlay.active .crt-pinch-line {
+  animation: crtPinchAnim 0.75s ease-in forwards;
+}
+
+@keyframes crtPinchAnim {
+  0% { opacity: 0; transform: translateY(-50%) scaleX(1) scaleY(1); }
+  60% { opacity: 0.9; transform: translateY(-50%) scaleX(1) scaleY(4); }
+  85% { opacity: 1; transform: translateY(-50%) scaleX(1) scaleY(1); }
+  95% { opacity: 1; transform: translateY(-50%) scaleX(0.05) scaleY(1); }
+  100% { opacity: 0; transform: translateY(-50%) scaleX(0) scaleY(0); }
+}

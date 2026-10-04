@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTRL ALT DISTRACT // INITIALIZATION</title>
+  <meta name="description" content="CTRL ALT DISTRACT - Retro Arcade CRT Terminal Experience" />
+
+  <!-- Shared & Intro Styles -->
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/intro.css" />
+</head>
+<body>
+  <!-- CRT Atmosphere Overlays -->
+  <div class="crt-overlay-wrapper">
+    <div class="crt-scanlines"></div>
+    <div class="crt-vignette"></div>
+    <div class="crt-flicker"></div>
+  </div>
+  <canvas id="noiseCanvas"></canvas>
+  <div class="retro-grid-bg"></div>
+
+  <!-- Audio Mute / Unmute Control -->
+  <div class="sys-audio-control" id="audioToggle" title="Toggle 8-bit sound synthesizers" role="button" tabindex="0">
+    <div class="audio-led"></div>
+    <span class="audio-label">SOUND: ON</span>
+  </div>
+
+  <!-- Main Experience Wrapper -->
+  <main class="experience-container">
+
+    <!-- ====================================================================
+         1. INTRO SCREEN
+         ==================================================================== -->
+    <section class="intro-screen" id="introScreen" aria-label="System Initialization">
+      <!-- HUD Corner Markings -->
+      <div class="hud-corner top-left">
+        <div>SYS_NODE // <span class="accent-txt">0x7F</span></div>
+        <div>MEM: 640KB OK</div>
+      </div>
+      <div class="hud-corner top-right">
+        <div>FREQ: <span class="accent-txt">60Hz CRT</span></div>
+        <div>0 0 0 0 0 0 0 0 0</div>
+      </div>
+      <div class="hud-corner bottom-left">
+        <span>[+]</span>
+        <span>ARCADE CHASSIS // READY</span>
+      </div>
+      <div class="hud-corner bottom-right">
+        <div>SIGNAL: <span class="accent-txt">LOCKED</span></div>
+        <div>CAD_TERMINAL_V2.4</div>
+      </div>
+
+      <!-- Centered Composition -->
+      <div class="intro-content">
+        <div class="sys-init-tag">
+          <div class="tag-dot"></div>
+          <span>SYSTEM // INITIALIZATION</span>
+        </div>
+
+        <h1 class="intro-heading-main">YOU READY?</h1>
+        <h2 class="intro-heading-sub">LET'S BEGIN</h2>
+
+        <button class="arcade-btn intro-start-btn" id="startBtn" type="button">
+          START
+        </button>
+
+        <p class="intro-hint">PRESS START TO INITIALIZE CRT TERMINAL</p>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         2. KEYBOARD STAGE
+         ==================================================================== -->
+    <section class="keyboard-stage" id="keyboardStage" aria-label="Command Keyboard Terminal">
+      <!-- Top Telemetry Bar -->
+      <div class="stage-telemetry-bar">
+        <div>
+          <span class="proto-name">MATRIX // </span>
+          <span>SECRET COMMAND INTERFACE</span>
+        </div>
+        <div class="stage-leds">
+          <div class="stage-led" id="led1">
+            <div class="led-pip"></div>
+            <span>STG.01</span>
+          </div>
+          <div class="stage-led" id="led2">
+            <div class="led-pip"></div>
+            <span>STG.02</span>
+          </div>
+          <div class="stage-led" id="led3">
+            <div class="led-pip"></div>
+            <span>STG.03</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keyboard Main Chassis -->
+      <div class="keyboard-chassis">
+        <!-- Surrounding HUD Crosshairs -->
+        <div class="keyboard-hud-grid">
+          <span class="hud-cross tl">+</span>
+          <span class="hud-cross tr">+</span>
+          <span class="hud-cross bl">+</span>
+          <span class="hud-cross br">+</span>
+        </div>
+
+        <!-- The Viewport with Layered Keyboard Graphics -->
+        <div class="keyboard-viewport">
+          <!-- Base unlit keyboard -->
+          <img src="assets/keyboard-base.jpg" class="keyboard-img base" alt="CTRL ALT DISTRACT Mechanical Keyboard" />
+
+          <!-- Full lit layer for 3-key unison illumination -->
+          <img src="assets/keyboard-lit.jpg" class="keyboard-img lit-full" id="keyboardLitFull" alt="" />
+
+          <!-- Individual illuminated key crops matching reference image -->
+          <div class="key-lit-layer key-ctrl" id="keyCtrlLit">
+            <img src="assets/key-ctrl-lit.png" alt="CTRL Lit" />
+          </div>
+          <div class="key-lit-layer key-alt" id="keyAltLit">
+            <img src="assets/key-alt-lit.png" alt="ALT Lit" />
+          </div>
+          <div class="key-lit-layer key-d" id="keyDLit">
+            <img src="assets/key-d-lit.png" alt="D Lit" />
+          </div>
+
+          <!-- Interactive Hitboxes for direct touch/mouse activation -->
+          <div class="key-hitbox hit-ctrl" id="hitCtrl" title="Click or Press CTRL" role="button" tabindex="0"></div>
+          <div class="key-hitbox hit-alt" id="hitAlt" title="Click or Press ALT" role="button" tabindex="0"></div>
+          <div class="key-hitbox hit-d" id="hitD" title="Click or Press D" role="button" tabindex="0"></div>
+
+          <!-- CRT Beam Scan Sweep -->
+          <div class="keyboard-crt-sweep"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Instruction & Command Feedback Box -->
+      <div class="stage-instruction-box">
+        <div class="instruction-prompt">
+          <div class="status-badge-live">
+            <div class="pulse-dot"></div>
+            <span>DETECTING</span>
+          </div>
+          <div class="instruction-text" id="instructionText">
+            WATCH INITIALIZATION SEQUENCE...
+          </div>
+        </div>
+
+        <div class="instruction-meta">
+          <div class="combo-counter-box">
+            SEQUENCE: <span class="combo-num" id="comboCounter">0 / 3</span>
+          </div>
+          <button class="arcade-btn-secondary touch-trigger-btn" id="touchTriggerBtn" type="button">
+            EXECUTE COMBO
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       3. GLITCH TRANSITION OVERLAY
+       ==================================================================== -->
+  <div class="glitch-transition-overlay" id="glitchOverlay" aria-hidden="true">
+    <div class="glitch-flash"></div>
+    <div class="glitch-slice glitch-slice-1"></div>
+    <div class="glitch-slice glitch-slice-2"></div>
+    <div class="glitch-slice glitch-slice-3"></div>
+    <div class="crt-pinch-line"></div>
+  </div>
+
+  <!-- JavaScript Engines -->
+  <script src="js/audio.js"></script>
+  <script src="js/crt-effects.js"></script>
+  <script src="js/intro.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import Landing from "./pages/Landing";
 import Rules from "./pages/Rules";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -32,7 +33,7 @@ export default function App() {
       <CompetitionPolicy>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/rules" element={<ProtectedRoute publicAccess><Rules /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
         <Route path="/leaderboard" element={<ProtectedRoute publicAccess><Leaderboard /></ProtectedRoute>} />

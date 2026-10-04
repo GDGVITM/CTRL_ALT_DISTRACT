@@ -1,0 +1,362 @@
+/* ==========================================================================
+   CTRL ALT DISTRACT - SHARED STYLES & RETRO CRT DESIGN SYSTEM
+   Aesthetic: RETRO ARCADE × CRT TERMINAL × PIXEL DIGITAL INTERFACE
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  /* Color Palette */
+  --bg-primary: #050505;
+  --bg-surface-1: #0A0A0D;
+  --bg-surface-2: #101116;
+  --bg-surface-3: #181920;
+
+  --border-subtle: #24262D;
+  --border-medium: #30323A;
+  --border-bright: #4A4D59;
+
+  --text-primary: #F2F2F2;
+  --text-secondary: #8B8D96;
+  --text-dim: #545763;
+
+  /* Accents - Yellow is strictly an accent, not dominant */
+  --accent-yellow: #FFD43B;
+  --accent-yellow-glow: rgba(255, 212, 59, 0.45);
+  --accent-yellow-dim: rgba(255, 212, 59, 0.15);
+  --accent-yellow-faint: rgba(255, 212, 59, 0.05);
+
+  --accent-cyan: #18B9D4;
+  --accent-cyan-glow: rgba(24, 185, 212, 0.35);
+  --accent-magenta: #FF3FA4;
+
+  /* Typography */
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Scanline intensity */
+  --scanline-opacity: 0.35;
+}
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* CRT Overlay System */
+.crt-overlay-wrapper {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+  overflow: hidden;
+}
+
+/* Scanlines */
+.crt-scanlines {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.4) 50%
+  );
+  background-size: 100% 3px;
+  opacity: var(--scanline-opacity);
+  pointer-events: none;
+}
+
+/* Vignette & Curved CRT Shadow */
+.crt-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+  pointer-events: none;
+}
+
+/* CRT Screen Flicker */
+.crt-flicker {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 212, 59, 0.007);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: crtFlicker 0.15s infinite;
+}
+
+@keyframes crtFlicker {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.65; }
+  100% { opacity: 0.45; }
+}
+
+/* Subtle background grid */
+.retro-grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 212, 59, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 212, 59, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise Canvas */
+#noiseCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.04;
+  z-index: 9989;
+}
+
+/* Typography Utilities */
+.pixel-title {
+  font-family: var(--font-pixel);
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.pixel-label {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  color: var(--accent-yellow);
+  text-transform: uppercase;
+}
+
+.tech-sublabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Pixel Badge */
+.pixel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--accent-yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pixel-badge.cyan {
+  border-color: rgba(24, 185, 212, 0.4);
+  color: var(--accent-cyan);
+}
+
+.pixel-badge.status-active::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-yellow);
+  box-shadow: 0 0 6px var(--accent-yellow);
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* Arcade Buttons */
+.arcade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: var(--accent-yellow);
+  color: #000000;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 0 #b38f00, 0 0 15px var(--accent-yellow-dim);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+  user-select: none;
+}
+
+.arcade-btn:hover {
+  background: #ffe066;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #b38f00, 0 0 25px var(--accent-yellow-glow);
+}
+
+.arcade-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #b38f00, 0 0 10px var(--accent-yellow-dim);
+}
+
+/* Secondary Arcade Button */
+.arcade-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-surface-1);
+  color: var(--text-primary);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--border-medium);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arcade-btn-secondary:hover {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+  background: var(--bg-surface-2);
+  box-shadow: 0 0 10px var(--accent-yellow-dim);
+}
+
+.arcade-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* HUD Panel Structure */
+.hud-panel {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  padding: var(--space-lg);
+}
+
+/* Corner Notch Accents */
+.hud-panel::before,
+.hud-panel::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: var(--accent-yellow);
+  pointer-events: none;
+}
+
+.hud-panel::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--accent-yellow);
+  border-left: 2px solid var(--accent-yellow);
+}
+
+.hud-panel::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--accent-yellow);
+  border-right: 2px solid var(--accent-yellow);
+}
+
+/* Sound and System Control Pill */
+.sys-audio-control {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9995;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(10, 10, 13, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-medium);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sys-audio-control:hover {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+}
+
+.sys-audio-control .audio-led {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-yellow);
+  border-radius: 50%;
+  box-shadow: 0 0 5px var(--accent-yellow);
+}
+
+.sys-audio-control.muted .audio-led {
+  background: var(--text-dim);
+  box-shadow: none;
+}
+
+/* Screen Shake Animation */
+@keyframes screenShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+  40% { transform: translate(3px, -2px) rotate(0.5deg); }
+  60% { transform: translate(-2px, -2px) rotate(0deg); }
+  80% { transform: translate(2px, 1px) rotate(0.2deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.shake {
+  animation: screenShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .crt-flicker {
+    display: none !important;
+  }
+}

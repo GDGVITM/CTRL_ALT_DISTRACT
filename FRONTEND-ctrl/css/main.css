@@ -1,0 +1,646 @@
+/* ==========================================================================
+   CTRL ALT DISTRACT - MAIN WEBSITE STYLES
+   Aesthetic: RETRO ARCADE × CRT TERMINAL × PIXEL DIGITAL INTERFACE
+   ========================================================================== */
+
+/* Main Site Layout Container */
+.main-layout {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+/* ==========================================================================
+   1. TOP ARCADE NAVBAR
+   ========================================================================== */
+.arcade-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(5, 5, 5, 0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-medium);
+  padding: 12px 24px;
+}
+
+.header-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Brand Logo */
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--accent-yellow);
+  color: var(--accent-yellow);
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  box-shadow: 0 0 8px var(--accent-yellow-dim);
+}
+
+.brand-text {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-subtext {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--accent-yellow);
+  letter-spacing: 0.1em;
+}
+
+/* Navigation Links */
+.arcade-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+}
+
+.nav-link {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  letter-spacing: 0.05em;
+}
+
+.nav-link:hover {
+  color: var(--accent-yellow);
+  border-color: var(--border-medium);
+  background: var(--bg-surface-1);
+}
+
+.nav-link.active {
+  color: var(--accent-yellow);
+  border-color: var(--accent-yellow);
+  background: var(--accent-yellow-faint);
+}
+
+/* Header Utilities */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.credit-counter {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 10px;
+}
+
+.credit-counter span {
+  color: var(--accent-yellow);
+}
+
+.reboot-btn {
+  font-size: 9px;
+  padding: 8px 14px;
+}
+
+/* Mobile Nav Toggle */
+.mobile-nav-toggle {
+  display: none;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  color: var(--accent-yellow);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   2. HERO SECTION
+   ========================================================================== */
+.hero-section {
+  padding: 64px 24px 48px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+}
+
+.hero-heading {
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.hero-heading .accent-word {
+  color: var(--accent-yellow);
+}
+
+.hero-description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 580px;
+}
+
+.hero-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* Hero Telemetry Monitor Card */
+.hero-monitor {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  position: relative;
+  overflow: hidden;
+}
+
+.monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--text-secondary);
+}
+
+.monitor-screen {
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--accent-yellow);
+  background: #020202;
+  min-height: 240px;
+  position: relative;
+}
+
+.ascii-art {
+  font-size: 9px;
+  line-height: 1.1;
+  white-space: pre;
+  color: var(--accent-yellow);
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.telemetry-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed rgba(255, 212, 59, 0.12);
+  padding-bottom: 4px;
+  font-size: 11px;
+}
+
+.telemetry-row .label {
+  color: var(--text-secondary);
+}
+
+.telemetry-row .val {
+  color: var(--text-primary);
+}
+
+.telemetry-row .val.highlight {
+  color: var(--accent-yellow);
+}
+
+/* ==========================================================================
+   3. ARCADE VAULT (Interactive Cards Grid)
+   ========================================================================== */
+.vault-section {
+  padding: 64px 24px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.vault-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+  background: var(--bg-surface-2);
+}
+
+/* Cards Grid */
+.vault-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.vault-card {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vault-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-bright);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px var(--accent-yellow-faint);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-icon {
+  font-size: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.card-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.card-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spec-name {
+  color: var(--text-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.spec-value {
+  color: var(--accent-yellow);
+}
+
+.card-action-btn {
+  width: 100%;
+}
+
+/* ==========================================================================
+   4. LIVE INTERACTIVE TERMINAL
+   ========================================================================== */
+.terminal-section {
+  padding: 48px 24px 64px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.terminal-chassis {
+  background: #020202;
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.term-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--border-bright);
+}
+
+.term-dot.close { background: #3a1515; }
+.term-dot.min { background: #3a3215; }
+.term-dot.max { background: #153a1e; }
+
+.terminal-screen-body {
+  padding: 24px;
+  min-height: 320px;
+  max-height: 480px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.terminal-output {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-bottom: 12px;
+}
+
+.term-line-accent {
+  color: var(--accent-yellow);
+}
+
+.term-line-dim {
+  color: var(--text-secondary);
+}
+
+.terminal-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt-symbol {
+  color: var(--accent-yellow);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+}
+
+.terminal-input {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  caret-color: var(--accent-yellow);
+}
+
+/* ==========================================================================
+   5. THE MANIFESTO
+   ========================================================================== */
+.manifesto-section {
+  padding: 64px 24px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.manifesto-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.manifesto-card {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-subtle);
+  padding: 32px 24px;
+  position: relative;
+}
+
+.manifesto-num {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: var(--accent-yellow);
+  margin-bottom: 16px;
+}
+
+.manifesto-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+}
+
+.manifesto-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   6. HIGH SCORE LEADERBOARD
+   ========================================================================== */
+.leaderboard-section {
+  padding: 48px 24px 64px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.leaderboard-table-wrap {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-medium);
+  overflow-x: auto;
+  margin-top: 24px;
+}
+
+.arcade-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.arcade-table th {
+  background: var(--bg-surface-2);
+  padding: 12px 18px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--accent-yellow);
+  border-bottom: 1px solid var(--border-medium);
+  letter-spacing: 0.05em;
+}
+
+.arcade-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.arcade-table tr:hover td {
+  background: rgba(255, 212, 59, 0.02);
+  color: var(--text-primary);
+}
+
+.arcade-table .rank-col {
+  color: var(--accent-yellow);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+}
+
+.arcade-table .score-col {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   7. FOOTER
+   ========================================================================== */
+.arcade-footer {
+  border-top: 1px solid var(--border-medium);
+  background: var(--bg-surface-1);
+  padding: 40px 24px 30px;
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.footer-links {
+  display: flex;
+  gap: 16px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .manifesto-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .arcade-nav {
+    display: none;
+  }
+
+  .arcade-nav.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-surface-1);
+    border-bottom: 1px solid var(--border-medium);
+    padding: 16px;
+  }
+
+  .mobile-nav-toggle {
+    display: block;
+  }
+}

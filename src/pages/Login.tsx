@@ -5,6 +5,7 @@ import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
 import { TextInput } from "../components/ui/Input";
 import { ArcadeDino } from "../components/ArcadeDino";
+import { PixelAuthBg } from "../components/PixelAuthBg";
 import { cn } from "../lib/utils";
 import { supabase, getUserProfile } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -128,25 +129,29 @@ export default function Login() {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Left visual */}
-      <div className="crt-grid crt-scanlines relative hidden border-r border-border-hairline bg-bg-canvas p-6 xl:p-10 lg:flex" aria-hidden="true">
-        <div className="flex w-full items-center">
-          <ArcadeDino busy={status === "submitting"} />
-        </div>
-      </div>
-      <div className="crt-grid relative flex h-40 items-center justify-center border-b border-border-hairline bg-bg-canvas lg:hidden" aria-hidden="true">
-        <Logo size={40} wordmark={false} />
-      </div>
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* Interactive Pixelated Background (Black & White with Cursor Color Reveal) */}
+      <PixelAuthBg />
 
-      {/* Right form */}
-      <div className="flex items-center justify-center bg-bg-base px-6 py-8 sm:px-10">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-4 hidden lg:block">
-            <Logo size={32} wordmark={false} />
+      <div className="relative z-10 grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        {/* Left visual */}
+        <div className="crt-grid crt-scanlines relative hidden border-r border-border-hairline/60 bg-black/40 p-6 xl:p-10 lg:flex backdrop-blur-[2px]" aria-hidden="true">
+          <div className="flex w-full items-center">
+            <ArcadeDino busy={status === "submitting"} />
           </div>
+        </div>
+        <div className="crt-grid relative flex h-40 items-center justify-center border-b border-border-hairline/60 bg-black/40 lg:hidden backdrop-blur-[2px]" aria-hidden="true">
+          <Logo size={40} wordmark={false} />
+        </div>
 
-          <h1 className="font-sans text-2xl font-bold text-text-primary sm:text-3xl">
+        {/* Right form */}
+        <div className="flex items-center justify-center bg-black/40 px-6 py-8 sm:px-10 backdrop-blur-[3px]">
+          <div className="w-full max-w-[420px] rounded-sm border border-border-default/60 bg-bg-surface-1/90 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+            <div className="mb-4 hidden lg:block">
+              <Logo size={32} wordmark={false} />
+            </div>
+
+            <h1 className="font-sans text-2xl font-bold text-text-primary sm:text-3xl">
             {mode === "sign-in" ? "Welcome, player." : "Create your player."}
           </h1>
           <p className="mt-1 font-body text-xs sm:text-sm text-text-secondary">
@@ -289,5 +294,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
