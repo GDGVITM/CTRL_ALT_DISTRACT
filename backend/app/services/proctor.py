@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncpg
 
 from ..db import db
-from ..schemas import AlertOut
+from ..schemas import AlertOut, RiskReason
 from .common import display_name, epoch_ms
 from . import event as event_service
 
@@ -15,10 +15,20 @@ SEVERITY = {
     "PASTE_BLOCKED": "low",
     "MULTI_SESSION": "high",
     "DISCONNECT": "low",
+    "RISK_CHEATING": "high",
 }
 
 
-def _detail(kind: str, seconds: int | None) -> str:
+def _detail(kind: str, seconds: int | None, risk_reason: RiskReason | None = None) -> str:
+    if kind == "RISK_CHEATING":
+        if risk_reason is None:
+            return "Competition screen policy warning displayed. Organizer review required."
+        return {
+            "fullscreen": "Fullscreen exited; policy warning displayed. Organizer review required.",
+            "focus": "Competition tab/window lost focus; policy warning displayed. Organizer review required.",
+            "visibility": "Competition tab became hidden; policy warning displayed. Organizer review required.",
+            "navigation": "Participant attempted to leave the challenge page; policy warning displayed. Organizer review required.",
+        }[risk_reason]
     n = seconds if seconds is not None else 0
     return {
         "TAB_SWITCH": f"Tab lost focus for {n}s",
@@ -36,22 +46,32 @@ async def record(
     round_no: int,
     seconds: int | None = None,
     dedupe_s: float = 3.0,
+    detail_override: str | None = None,
 ) -> bool:
-    recent = await conn.fetchval(
-        "SELECT 1 FROM public.proctor_events WHERE user_id = $1::uuid AND type = $2 "
-        "AND created_at > now() - make_interval(secs => $3) LIMIT 1",
-        user_id, kind, dedupe_s,
-    )
+    detail = detail_override if detail_override is not None else _detail(kind, seconds)
+    if kind == "RISK_CHEATING":
+        # Focus and fullscreen warnings are distinct incidents, even close together.
+        recent = await conn.fetchval(
+            "SELECT 1 FROM public.proctor_events WHERE user_id = $1::uuid AND type = $2 "
+            "AND created_at > now() - make_interval(secs => $3) AND detail = $4 LIMIT 1",
+            user_id, kind, dedupe_s, detail,
+        )
+    else:
+        recent = await conn.fetchval(
+            "SELECT 1 FROM public.proctor_events WHERE user_id = $1::uuid AND type = $2 "
+            "AND created_at > now() - make_interval(secs => $3) LIMIT 1",
+            user_id, kind, dedupe_s,
+        )
     if recent:
         return False
     await conn.execute(
         "INSERT INTO public.proctor_events (user_id, type, severity, round_no, detail) VALUES ($1::uuid, $2, $3, $4, $5)",
-        user_id, kind, SEVERITY[kind], round_no, _detail(kind, seconds),
+        user_id, kind, SEVERITY[kind], round_no, detail,
     )
     return True
 
 
-async def report(user_id: str, kind: str, seconds: int | None) -> None:
+async def report(user_id: str, kind: str, seconds: int | None, *, risk_reason: RiskReason | None = None) -> None:
     """Client-reported event. Ignored unless the player is mid-run, so lobby noise never reaches admins."""
     ev = await event_service.get_event()
     if ev["status"] != "live":
@@ -62,7 +82,10 @@ async def report(user_id: str, kind: str, seconds: int | None) -> None:
         )
         if part is None or part["status"] != "playing":
             return
-        await record(conn, user_id, kind, part["current_round"], seconds)
+        await record(
+            conn, user_id, kind, part["current_round"], seconds,
+            detail_override=_detail(kind, seconds, risk_reason) if kind == "RISK_CHEATING" else None,
+        )
 
 
 # --------------------------------------------------------------------------- admin queries
@@ -89,7 +112,7 @@ async def list_alerts(limit: int = 500) -> list[AlertOut]:
             """
             SELECT e.*, p.full_name, p.player_no
             FROM public.proctor_events e JOIN public.profiles p ON p.id = e.user_id
-            WHERE NOT e.dismissed
+            WHERE NOT e.dismissed AND p.role = 'participant'
             ORDER BY e.created_at DESC, e.id DESC
             LIMIT $1
             """,

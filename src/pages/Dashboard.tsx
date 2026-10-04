@@ -111,7 +111,7 @@ export default function Dashboard() {
     setChecklistAttempted(false);
     if (state === "not-joined") return setConfirmOpen(true);
     if (state === "joined") return navigate("/lobby");
-    if (state === "live") return navigate("/arena");
+    if (state === "live") return navigate("/questions");
     if (state === "ended" || state === "finished") return navigate("/leaderboard");
   };
 

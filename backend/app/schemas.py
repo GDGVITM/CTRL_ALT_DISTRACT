@@ -233,12 +233,14 @@ class DistractionResolveResponse(CamelModel):
 # ------------------------------------------------------------------ proctoring
 
 
-ProctorType = Literal["TAB_SWITCH", "FULLSCREEN_EXIT", "PASTE_BLOCKED", "MULTI_SESSION", "DISCONNECT"]
+ProctorType = Literal["TAB_SWITCH", "FULLSCREEN_EXIT", "PASTE_BLOCKED", "MULTI_SESSION", "DISCONNECT", "RISK_CHEATING"]
+RiskReason = Literal["fullscreen", "focus", "visibility", "navigation"]
 
 
 class ProctorEventRequest(CamelModel):
     type: ProctorType
     seconds: int | None = Field(default=None, ge=0, le=86_400)
+    risk_reason: RiskReason | None = None
 
 
 class AlertOut(CamelModel):
@@ -260,6 +262,7 @@ class LeaderboardEntry(CamelModel):
     rank: int
     id: str
     name: str
+    email: str | None = None
     initials: str
     round_pts: int
     bonus: int

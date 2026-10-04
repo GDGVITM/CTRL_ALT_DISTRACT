@@ -162,10 +162,10 @@ export const MemoryMatch: React.FC<CommonGameProps> = ({ onPass, isPaused }) => 
               whileHover={!isFlipped ? { scale: 1.04 } : {}}
               whileTap={!isFlipped ? { scale: 0.96 } : {}}
               onClick={() => handleCardClick(card)}
-              className="h-24 sm:h-28 rounded-xl cursor-pointer perspective-1000 relative select-none"
+              className="h-24 sm:h-28 rounded-xl cursor-pointer perspective-[1000px] relative select-none"
             >
               <div
-                className={`w-full h-full rounded-xl transition-transform duration-500 transform-style-preserve-3d relative ${
+                className={`w-full h-full rounded-xl transition-transform duration-500 transform-3d relative ${
                   isFlipped ? 'rotate-y-180' : ''
                 }`}
               >

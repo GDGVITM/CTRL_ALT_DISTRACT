@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button, PixelSpinner } from "../components/ui/Button";
@@ -7,11 +7,13 @@ import { TextInput } from "../components/ui/Input";
 import { ArcadeDino } from "../components/ArcadeDino";
 import { cn } from "../lib/utils";
 import { supabase, getUserProfile } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 
 type Mode = "sign-in" | "sign-up";
 type Status = "idle" | "submitting" | "error" | "success";
 
 export default function Login() {
+  const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState<Mode>("sign-in");
@@ -120,6 +122,10 @@ export default function Login() {
       setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
   };
+
+  if (!loading && user && role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
