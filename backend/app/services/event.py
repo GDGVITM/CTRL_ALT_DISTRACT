@@ -13,7 +13,8 @@ from ..schemas import EventInfo, LanguageInfo
 from .common import epoch_ms
 from .scoring import DIFFICULTY_POINTS
 
-_EVENT_TTL_S = 1.0
+_EVENT_TTL_S = 3.0
+
 _LANG_TTL_S = 60.0
 _event_cache: tuple[float, asyncpg.Record] | None = None
 _lang_cache: tuple[float, list[asyncpg.Record]] | None = None

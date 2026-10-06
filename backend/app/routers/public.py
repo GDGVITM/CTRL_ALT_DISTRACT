@@ -15,9 +15,8 @@ router = APIRouter(prefix="/api", tags=["public"])
 
 @router.get("/health")
 async def health() -> dict:
-    async with db.acquire() as conn:
-        await conn.fetchval("SELECT 1")
     return {"status": "online", "service": "ctrl-alt-distract"}
+
 
 
 @router.get("/event", response_model=EventInfo)
