@@ -46,15 +46,14 @@ export default function Questions() {
     if (fetching.current || selectionPending.current) return;
     fetching.current = true;
     try {
-      // An active interruption must be completed in the arena before choosing a question.
-      const state = await api.arena.state();
+      // Fetch state and questions in parallel for instant loading
+      const [state, next] = await Promise.all([api.arena.state(), api.arena.questions()]);
       if (!mounted.current) return;
       if (!state.finished && state.round?.distraction.state === "active") {
         navigate("/arena", { replace: true });
         return;
       }
-      const next = await api.arena.questions();
-      if (!mounted.current || selectionPending.current) return;
+      if (selectionPending.current) return;
       setData(next);
       setError(null);
       if (state.finished || next.finished) void refreshMe();
