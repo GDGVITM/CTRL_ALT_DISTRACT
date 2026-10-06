@@ -20,19 +20,21 @@ class Settings(BaseSettings):
 
     # Postgres (use the Supabase pooler on IPv4-only networks)
     database_url: str
-    db_pool_min: int = 2
-    db_pool_max: int = 10
-    db_statement_cache: int = 100  # set 0 behind a transaction-mode pooler (port 6543)
+    db_pool_min: int = 10
+    db_pool_max: int = 60
+    db_statement_cache: int = 0  # set 0 behind a transaction-mode pooler (port 6543)
 
     # Judge0
     judge0_url: str = "https://ce.judge0.com"
     judge0_api_key: str = ""
     judge0_api_key_header: str = "X-Auth-Token"  # RapidAPI deployments use "X-RapidAPI-Key"
     judge0_api_host: str = ""  # RapidAPI only: value for the X-RapidAPI-Host header
-    judge0_concurrency: int = 8  # simultaneous judge calls issued by this process
-    judge0_timeout_s: float = 40.0
+    judge0_concurrency: int = 25  # simultaneous judge calls issued by this process
+    judge0_timeout_s: float = 30.0
     judge0_max_cpu_s: float = 15.0  # Judge0 CE default ceiling for cpu_time_limit
     judge0_memory_kb: int = 512_000
+
+
 
     # Anti-abuse
     run_interval_s: float = 2.0
