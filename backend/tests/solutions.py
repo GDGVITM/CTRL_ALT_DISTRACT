@@ -1,283 +1,525 @@
 """Known-correct player solutions in every language, used to validate the harnesses end to end."""
 
 SOLUTIONS: dict[str, dict[str, str]] = {
-    "pair-sum-window": {
+    "second-largest-element": {
         "python": """class Solution:
-    def solve(self, nums, k):
-        seen = {}
-        for j, x in enumerate(nums):
-            if k - x in seen:
-                return [seen[k - x], j]
-            seen[x] = j
+    def secondLargest(self, nums):
+        first = second = -float('inf')
+        for x in nums:
+            if x > first:
+                second = first
+                first = x
+            elif x < first and x > second:
+                second = x
+        return int(second) if second != -float('inf') else -1
 """,
         "cpp": """class Solution {
 public:
-    vector<int> solve(vector<int>& nums, int k) {
-        unordered_map<int, int> seen;
-        for (int j = 0; j < (int)nums.size(); ++j) {
-            auto it = seen.find(k - nums[j]);
-            if (it != seen.end()) return {it->second, j};
-            seen[nums[j]] = j;
-        }
-        return {};
-    }
-};
-""",
-        "c": """static int* _g;
-static int cmp(const void* a, const void* b) {
-    int x = *(const int*)a, y = *(const int*)b;
-    return (_g[x] > _g[y]) - (_g[x] < _g[y]);
-}
-int* solve(int* nums, int numsSize, int k, int* returnSize) {
-    int* idx = malloc(sizeof(int) * numsSize);
-    for (int i = 0; i < numsSize; i++) idx[i] = i;
-    _g = nums;
-    qsort(idx, numsSize, sizeof(int), cmp);
-    int l = 0, r = numsSize - 1;
-    int* res = malloc(sizeof(int) * 2);
-    while (l < r) {
-        long long s = (long long)nums[idx[l]] + nums[idx[r]];
-        if (s == k) {
-            int a = idx[l], b = idx[r];
-            res[0] = a < b ? a : b;
-            res[1] = a < b ? b : a;
-            *returnSize = 2;
-            return res;
-        }
-        if (s < k) l++; else r--;
-    }
-    *returnSize = 0;
-    return res;
-}
-""",
-        "java": """class Solution {
-    public int[] solve(int[] nums, int k) {
-        HashMap<Integer, Integer> seen = new HashMap<>();
-        for (int j = 0; j < nums.length; j++) {
-            Integer i = seen.get(k - nums[j]);
-            if (i != null) return new int[]{i, j};
-            seen.put(nums[j], j);
-        }
-        return new int[0];
-    }
-}
-""",
-    },
-    "balanced-brackets": {
-        "python": """class Solution:
-    def isValid(self, s):
-        pairs = {')': '(', ']': '[', '}': '{'}
-        st = []
-        for ch in s:
-            if ch in '([{':
-                st.append(ch)
-            elif not st or st.pop() != pairs[ch]:
-                return False
-        return not st
-""",
-        "cpp": """class Solution {
-public:
-    bool isValid(string s) {
-        vector<char> st;
-        for (char ch : s) {
-            if (ch == '(' || ch == '[' || ch == '{') st.push_back(ch);
-            else {
-                if (st.empty()) return false;
-                char o = st.back(); st.pop_back();
-                if ((ch == ')' && o != '(') || (ch == ']' && o != '[') || (ch == '}' && o != '{')) return false;
+    int secondLargest(vector<int>& nums) {
+        long long first = -1e18, second = -1e18;
+        for (int x : nums) {
+            if (x > first) {
+                second = first;
+                first = x;
+            } else if (x < first && x > second) {
+                second = x;
             }
         }
-        return st.empty();
+        return second == -1e18 ? -1 : (int)second;
     }
 };
 """,
-        "c": """bool isValid(char* s) {
-    int n = (int)strlen(s), top = 0;
-    char* st = malloc(n + 1);
-    for (int i = 0; i < n; i++) {
-        char ch = s[i];
-        if (ch == '(' || ch == '[' || ch == '{') st[top++] = ch;
-        else {
-            if (top == 0) return false;
-            char o = st[--top];
-            if ((ch == ')' && o != '(') || (ch == ']' && o != '[') || (ch == '}' && o != '{')) return false;
+        "c": """int secondLargest(int* nums, int numsSize) {
+    long long first = -1000000000000000LL, second = -1000000000000000LL;
+    for (int i = 0; i < numsSize; i++) {
+        long long x = nums[i];
+        if (x > first) {
+            second = first;
+            first = x;
+        } else if (x < first && x > second) {
+            second = x;
         }
     }
-    return top == 0;
+    return second == -1000000000000000LL ? -1 : (int)second;
 }
 """,
         "java": """class Solution {
-    public boolean isValid(String s) {
-        ArrayDeque<Character> st = new ArrayDeque<>();
-        for (char ch : s.toCharArray()) {
-            if (ch == '(' || ch == '[' || ch == '{') st.push(ch);
-            else {
-                if (st.isEmpty()) return false;
-                char o = st.pop();
-                if ((ch == ')' && o != '(') || (ch == ']' && o != '[') || (ch == '}' && o != '{')) return false;
+    public int secondLargest(int[] nums) {
+        long first = Long.MIN_VALUE, second = Long.MIN_VALUE;
+        for (int x : nums) {
+            if (x > first) {
+                second = first;
+                first = x;
+            } else if (x < first && x > second) {
+                second = x;
             }
         }
-        return st.isEmpty();
+        return second == Long.MIN_VALUE ? -1 : (int) second;
     }
 }
 """,
     },
-    "climbing-stairs": {
+    "remove-duplicates-from-sorted-array": {
         "python": """class Solution:
-    def climbStairs(self, n):
-        a, b = 1, 1
-        for _ in range(n - 1):
-            a, b = b, a + b
-        return b
+    def removeDuplicates(self, nums):
+        if not nums:
+            return 0
+        i = 0
+        for j in range(1, len(nums)):
+            if nums[j] != nums[i]:
+                i += 1
+                nums[i] = nums[j]
+        return i + 1
 """,
         "cpp": """class Solution {
 public:
-    int climbStairs(int n) {
-        long long a = 1, b = 1;
-        for (int i = 1; i < n; i++) { long long t = a + b; a = b; b = t; }
-        return (int)b;
+    int removeDuplicates(vector<int>& nums) {
+        if (nums.empty()) return 0;
+        int i = 0;
+        for (int j = 1; j < (int)nums.size(); j++) {
+            if (nums[j] != nums[i]) {
+                i++;
+                nums[i] = nums[j];
+            }
+        }
+        return i + 1;
     }
 };
 """,
-        "c": """int climbStairs(int n) {
-    long long a = 1, b = 1;
-    for (int i = 1; i < n; i++) { long long t = a + b; a = b; b = t; }
-    return (int)b;
+        "c": """int removeDuplicates(int* nums, int numsSize) {
+    if (numsSize == 0) return 0;
+    int i = 0;
+    for (int j = 1; j < numsSize; j++) {
+        if (nums[j] != nums[i]) {
+            i++;
+            nums[i] = nums[j];
+        }
+    }
+    return i + 1;
 }
 """,
         "java": """class Solution {
-    public int climbStairs(int n) {
-        long a = 1, b = 1;
-        for (int i = 1; i < n; i++) { long t = a + b; a = b; b = t; }
-        return (int) b;
+    public int removeDuplicates(int[] nums) {
+        if (nums.length == 0) return 0;
+        int i = 0;
+        for (int j = 1; j < nums.length; j++) {
+            if (nums[j] != nums[i]) {
+                i++;
+                nums[i] = nums[j];
+            }
+        }
+        return i + 1;
     }
 }
 """,
     },
-    "max-subarray-sum": {
+    "majority-element": {
         "python": """class Solution:
-    def maxSubArray(self, nums):
-        best = cur = nums[0]
-        for x in nums[1:]:
-            cur = max(x, cur + x)
-            best = max(best, cur)
-        return best
+    def majorityElement(self, nums):
+        count = 0
+        cand = None
+        for x in nums:
+            if count == 0:
+                cand = x
+            count += 1 if x == cand else -1
+        return cand
 """,
         "cpp": """class Solution {
 public:
-    int maxSubArray(vector<int>& nums) {
-        int best = nums[0], cur = nums[0];
-        for (size_t i = 1; i < nums.size(); i++) {
-            cur = max(nums[i], cur + nums[i]);
-            best = max(best, cur);
+    int majorityElement(vector<int>& nums) {
+        int count = 0, cand = 0;
+        for (int x : nums) {
+            if (count == 0) cand = x;
+            count += (x == cand) ? 1 : -1;
         }
-        return best;
+        return cand;
     }
 };
 """,
-        "c": """int maxSubArray(int* nums, int numsSize) {
-    int best = nums[0], cur = nums[0];
-    for (int i = 1; i < numsSize; i++) {
-        cur = nums[i] > cur + nums[i] ? nums[i] : cur + nums[i];
-        if (cur > best) best = cur;
+        "c": """int majorityElement(int* nums, int numsSize) {
+    int count = 0, cand = 0;
+    for (int i = 0; i < numsSize; i++) {
+        if (count == 0) cand = nums[i];
+        count += (nums[i] == cand) ? 1 : -1;
     }
-    return best;
+    return cand;
 }
 """,
         "java": """class Solution {
-    public int maxSubArray(int[] nums) {
-        int best = nums[0], cur = nums[0];
-        for (int i = 1; i < nums.length; i++) {
-            cur = Math.max(nums[i], cur + nums[i]);
-            best = Math.max(best, cur);
+    public int majorityElement(int[] nums) {
+        int count = 0, cand = 0;
+        for (int x : nums) {
+            if (count == 0) cand = x;
+            count += (x == cand) ? 1 : -1;
         }
-        return best;
+        return cand;
     }
 }
 """,
     },
-    "longest-unique-substring": {
+    "move-zeroes": {
         "python": """class Solution:
-    def lengthOfLongestSubstring(self, s):
-        last = {}
-        best = start = 0
-        for i, ch in enumerate(s):
-            if ch in last and last[ch] >= start:
-                start = last[ch] + 1
-            last[ch] = i
-            best = max(best, i - start + 1)
-        return best
+    def moveZeroes(self, nums):
+        res = list(nums)
+        pos = 0
+        for x in res:
+            if x != 0:
+                res[pos] = x
+                pos += 1
+        while pos < len(res):
+            res[pos] = 0
+            pos += 1
+        return res
 """,
         "cpp": """class Solution {
 public:
-    int lengthOfLongestSubstring(string s) {
-        vector<int> last(128, -1);
-        int best = 0, start = 0;
-        for (int i = 0; i < (int)s.size(); i++) {
-            if (last[(int)s[i]] >= start) start = last[(int)s[i]] + 1;
-            last[(int)s[i]] = i;
-            best = max(best, i - start + 1);
+    vector<int> moveZeroes(vector<int>& nums) {
+        vector<int> res = nums;
+        int pos = 0;
+        for (int x : res) {
+            if (x != 0) res[pos++] = x;
         }
-        return best;
-    }
-};
-""",
-        "c": """int lengthOfLongestSubstring(char* s) {
-    int last[128];
-    for (int i = 0; i < 128; i++) last[i] = -1;
-    int best = 0, start = 0, n = (int)strlen(s);
-    for (int i = 0; i < n; i++) {
-        if (last[(int)s[i]] >= start) start = last[(int)s[i]] + 1;
-        last[(int)s[i]] = i;
-        if (i - start + 1 > best) best = i - start + 1;
-    }
-    return best;
-}
-""",
-        "java": """class Solution {
-    public int lengthOfLongestSubstring(String s) {
-        int[] last = new int[128];
-        Arrays.fill(last, -1);
-        int best = 0, start = 0;
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (last[c] >= start) start = last[c] + 1;
-            last[c] = i;
-            best = Math.max(best, i - start + 1);
-        }
-        return best;
-    }
-}
-""",
-    },
-    "rotate-array": {
-        "python": """class Solution:
-    def rotate(self, nums, k):
-        k %= len(nums)
-        return nums[len(nums) - k:] + nums[:len(nums) - k]
-""",
-        "cpp": """class Solution {
-public:
-    vector<int> rotate(vector<int>& nums, int k) {
-        int n = nums.size();
-        vector<int> res(n);
-        for (int i = 0; i < n; i++) res[(int)(((long long)i + k) % n)] = nums[i];
+        while (pos < (int)res.size()) res[pos++] = 0;
         return res;
     }
 };
 """,
-        "c": """int* rotate(int* nums, int numsSize, int k, int* returnSize) {
+        "c": """int* moveZeroes(int* nums, int numsSize, int* returnSize) {
     int* res = malloc(sizeof(int) * numsSize);
-    for (int i = 0; i < numsSize; i++) res[(int)(((long long)i + k) % numsSize)] = nums[i];
+    int pos = 0;
+    for (int i = 0; i < numsSize; i++) {
+        if (nums[i] != 0) res[pos++] = nums[i];
+    }
+    while (pos < numsSize) res[pos++] = 0;
     *returnSize = numsSize;
     return res;
 }
 """,
         "java": """class Solution {
-    public int[] rotate(int[] nums, int k) {
-        int n = nums.length;
-        int[] res = new int[n];
-        for (int i = 0; i < n; i++) res[(int) (((long) i + k) % n)] = nums[i];
+    public int[] moveZeroes(int[] nums) {
+        int[] res = nums.clone();
+        int pos = 0;
+        for (int x : res) {
+            if (x != 0) res[pos++] = x;
+        }
+        while (pos < res.length) res[pos++] = 0;
+        return res;
+    }
+}
+""",
+    },
+    "find-missing-number": {
+        "python": """class Solution:
+    def missingNumber(self, nums):
+        n = len(nums)
+        return n * (n + 1) // 2 - sum(nums)
+""",
+        "cpp": """class Solution {
+public:
+    int missingNumber(vector<int>& nums) {
+        long long n = nums.size();
+        long long total = n * (n + 1) / 2;
+        for (int x : nums) total -= x;
+        return (int)total;
+    }
+};
+""",
+        "c": """int missingNumber(int* nums, int numsSize) {
+    long long n = numsSize;
+    long long total = n * (n + 1) / 2;
+    for (int i = 0; i < numsSize; i++) total -= nums[i];
+    return (int)total;
+}
+""",
+        "java": """class Solution {
+    public int missingNumber(int[] nums) {
+        long n = nums.length;
+        long total = n * (n + 1) / 2;
+        for (int x : nums) total -= x;
+        return (int) total;
+    }
+}
+""",
+    },
+    "merge-overlapping-intervals": {
+        "python": """class Solution:
+    def merge(self, intervals):
+        if not intervals:
+            return []
+        pairs = [[intervals[i], intervals[i+1]] for i in range(0, len(intervals), 2)]
+        pairs.sort(key=lambda x: x[0])
+        res = [pairs[0]]
+        for cur in pairs[1:]:
+            if cur[0] <= res[-1][1]:
+                res[-1][1] = max(res[-1][1], cur[1])
+            else:
+                res.append(cur)
+        out = []
+        for a, b in res:
+            out.extend([a, b])
+        return out
+""",
+        "cpp": """class Solution {
+public:
+    vector<int> merge(vector<int>& intervals) {
+        if (intervals.empty()) return {};
+        vector<pair<int, int>> pairs;
+        for (size_t i = 0; i < intervals.size(); i += 2) {
+            pairs.push_back({intervals[i], intervals[i+1]});
+        }
+        sort(pairs.begin(), pairs.end());
+        vector<pair<int, int>> merged;
+        merged.push_back(pairs[0]);
+        for (size_t i = 1; i < pairs.size(); i++) {
+            if (pairs[i].first <= merged.back().second) {
+                merged.back().second = max(merged.back().second, pairs[i].second);
+            } else {
+                merged.push_back(pairs[i]);
+            }
+        }
+        vector<int> out;
+        for (auto& p : merged) {
+            out.push_back(p.first);
+            out.push_back(p.second);
+        }
+        return out;
+    }
+};
+""",
+        "c": """typedef struct { int s, e; } Pair;
+static int cmpPair(const void* a, const void* b) {
+    Pair* p1 = (Pair*)a; Pair* p2 = (Pair*)b;
+    return (p1->s > p2->s) - (p1->s < p2->s);
+}
+int* merge(int* intervals, int intervalsSize, int* returnSize) {
+    if (intervalsSize == 0) { *returnSize = 0; return malloc(0); }
+    int n = intervalsSize / 2;
+    Pair* pairs = malloc(sizeof(Pair) * n);
+    for (int i = 0; i < n; i++) {
+        pairs[i].s = intervals[2 * i];
+        pairs[i].e = intervals[2 * i + 1];
+    }
+    qsort(pairs, n, sizeof(Pair), cmpPair);
+    Pair* merged = malloc(sizeof(Pair) * n);
+    int mCount = 0;
+    merged[mCount++] = pairs[0];
+    for (int i = 1; i < n; i++) {
+        if (pairs[i].s <= merged[mCount - 1].e) {
+            if (pairs[i].e > merged[mCount - 1].e) merged[mCount - 1].e = pairs[i].e;
+        } else {
+            merged[mCount++] = pairs[i];
+        }
+    }
+    int* out = malloc(sizeof(int) * mCount * 2);
+    for (int i = 0; i < mCount; i++) {
+        out[2 * i] = merged[i].s;
+        out[2 * i + 1] = merged[i].e;
+    }
+    *returnSize = mCount * 2;
+    free(pairs);
+    free(merged);
+    return out;
+}
+""",
+        "java": """class Solution {
+    public int[] merge(int[] intervals) {
+        if (intervals.length == 0) return new int[0];
+        int n = intervals.length / 2;
+        int[][] pairs = new int[n][2];
+        for (int i = 0; i < n; i++) {
+            pairs[i][0] = intervals[2 * i];
+            pairs[i][1] = intervals[2 * i + 1];
+        }
+        Arrays.sort(pairs, (a, b) -> Integer.compare(a[0], b[0]));
+        List<int[]> merged = new ArrayList<>();
+        merged.add(pairs[0]);
+        for (int i = 1; i < n; i++) {
+            int[] last = merged.get(merged.size() - 1);
+            if (pairs[i][0] <= last[1]) {
+                last[1] = Math.max(last[1], pairs[i][1]);
+            } else {
+                merged.add(pairs[i]);
+            }
+        }
+        int[] out = new int[merged.size() * 2];
+        for (int i = 0; i < merged.size(); i++) {
+            out[2 * i] = merged.get(i)[0];
+            out[2 * i + 1] = merged.get(i)[1];
+        }
+        return out;
+    }
+}
+""",
+    },
+    "intersection-of-two-arrays": {
+        "python": """class Solution:
+    def intersection(self, nums1, nums2):
+        return sorted(list(set(nums1) & set(nums2)))
+""",
+        "cpp": """class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> s1(nums1.begin(), nums1.end());
+        set<int> common;
+        for (int x : nums2) {
+            if (s1.count(x)) common.insert(x);
+        }
+        return vector<int>(common.begin(), common.end());
+    }
+};
+""",
+        "c": """static int cmpInt(const void* a, const void* b) {
+    int x = *(const int*)a;
+    int y = *(const int*)b;
+    return (x > y) - (x < y);
+}
+int* intersection(int* nums1, int nums1Size, int* nums2, int nums2Size, int* returnSize) {
+    if (nums1Size == 0 || nums2Size == 0) {
+        *returnSize = 0;
+        return malloc(0);
+    }
+    int* a1 = malloc(sizeof(int) * nums1Size);
+    for (int i = 0; i < nums1Size; i++) a1[i] = nums1[i];
+    qsort(a1, nums1Size, sizeof(int), cmpInt);
+
+    int* a2 = malloc(sizeof(int) * nums2Size);
+    for (int i = 0; i < nums2Size; i++) a2[i] = nums2[i];
+    qsort(a2, nums2Size, sizeof(int), cmpInt);
+
+    int maxLen = nums1Size < nums2Size ? nums1Size : nums2Size;
+    int* res = malloc(sizeof(int) * maxLen);
+    int p1 = 0, p2 = 0, count = 0;
+
+    while (p1 < nums1Size && p2 < nums2Size) {
+        if (a1[p1] == a2[p2]) {
+            if (count == 0 || res[count - 1] != a1[p1]) {
+                res[count++] = a1[p1];
+            }
+            p1++;
+            p2++;
+        } else if (a1[p1] < a2[p2]) {
+            p1++;
+        } else {
+            p2++;
+        }
+    }
+    free(a1);
+    free(a2);
+    *returnSize = count;
+    return res;
+}
+""",
+        "java": """class Solution {
+    public int[] intersection(int[] nums1, int[] nums2) {
+        Set<Integer> s1 = new HashSet<>();
+        for (int x : nums1) s1.add(x);
+        Set<Integer> common = new TreeSet<>();
+        for (int x : nums2) {
+            if (s1.contains(x)) common.add(x);
+        }
+        int[] res = new int[common.size()];
+        int idx = 0;
+        for (int x : common) res[idx++] = x;
+        return res;
+    }
+}
+""",
+    },
+    "middle-of-linked-list": {
+        "python": """class Solution:
+    def middleNode(self, head):
+        return head[len(head)//2:]
+""",
+        "cpp": """class Solution {
+public:
+    vector<int> middleNode(vector<int>& head) {
+        int mid = head.size() / 2;
+        return vector<int>(head.begin() + mid, head.end());
+    }
+};
+""",
+        "c": """int* middleNode(int* head, int headSize, int* returnSize) {
+    int mid = headSize / 2;
+    int len = headSize - mid;
+    int* res = malloc(sizeof(int) * len);
+    for (int i = 0; i < len; i++) res[i] = head[mid + i];
+    *returnSize = len;
+    return res;
+}
+""",
+        "java": """class Solution {
+    public int[] middleNode(int[] head) {
+        int mid = head.length / 2;
+        int len = head.length - mid;
+        int[] res = new int[len];
+        System.arraycopy(head, mid, res, 0, len);
+        return res;
+    }
+}
+""",
+    },
+    "detect-cycle-in-linked-list": {
+        "python": """class Solution:
+    def hasCycle(self, head, pos):
+        return pos >= 0 and pos < len(head)
+""",
+        "cpp": """class Solution {
+public:
+    bool hasCycle(vector<int>& head, int pos) {
+        return pos >= 0 && pos < (int)head.size();
+    }
+};
+""",
+        "c": """bool hasCycle(int* head, int headSize, int pos) {
+    return pos >= 0 && pos < headSize;
+}
+""",
+        "java": """class Solution {
+    public boolean hasCycle(int[] head, int pos) {
+        return pos >= 0 && pos < head.length;
+    }
+}
+""",
+    },
+    "reverse-nodes-in-pairs": {
+        "python": """class Solution:
+    def swapPairs(self, head):
+        res = list(head)
+        for i in range(0, len(res) - 1, 2):
+            res[i], res[i+1] = res[i+1], res[i]
+        return res
+""",
+        "cpp": """class Solution {
+public:
+    vector<int> swapPairs(vector<int>& head) {
+        vector<int> res = head;
+        for (size_t i = 0; i + 1 < res.size(); i += 2) {
+            swap(res[i], res[i+1]);
+        }
+        return res;
+    }
+};
+""",
+        "c": """int* swapPairs(int* head, int headSize, int* returnSize) {
+    int* res = malloc(sizeof(int) * headSize);
+    for (int i = 0; i < headSize; i++) res[i] = head[i];
+    for (int i = 0; i + 1 < headSize; i += 2) {
+        int t = res[i];
+        res[i] = res[i+1];
+        res[i+1] = t;
+    }
+    *returnSize = headSize;
+    return res;
+}
+""",
+        "java": """class Solution {
+    public int[] swapPairs(int[] head) {
+        int[] res = head.clone();
+        for (int i = 0; i + 1 < res.length; i += 2) {
+            int t = res[i];
+            res[i] = res[i+1];
+            res[i+1] = t;
+        }
         return res;
     }
 }
@@ -285,61 +527,3 @@ public:
     },
 }
 
-SOLUTIONS["coin-change"] = {
-    "python": """class Solution:
-    def coinChange(self, coins, amount):
-        inf = amount + 1
-        dp = [0] + [inf] * amount
-        for a in range(1, amount + 1):
-            for c in coins:
-                if c <= a and dp[a - c] + 1 < dp[a]:
-                    dp[a] = dp[a - c] + 1
-        return dp[amount] if dp[amount] != inf else -1
-""",
-}
-SOLUTIONS["longest-increasing-subsequence"] = {
-    "python": """import bisect
-
-class Solution:
-    def lengthOfLIS(self, nums):
-        tails = []
-        for x in nums:
-            i = bisect.bisect_left(tails, x)
-            if i == len(tails):
-                tails.append(x)
-            else:
-                tails[i] = x
-        return len(tails)
-""",
-}
-SOLUTIONS["trapping-rain-water"] = {
-    "python": """class Solution:
-    def trap(self, height):
-        left, right = 0, len(height) - 1
-        lmax = rmax = water = 0
-        while left < right:
-            if height[left] < height[right]:
-                lmax = max(lmax, height[left])
-                water += lmax - height[left]
-                left += 1
-            else:
-                rmax = max(rmax, height[right])
-                water += rmax - height[right]
-                right -= 1
-        return water
-""",
-}
-SOLUTIONS["subarray-sum-equals-k"] = {
-    "python": """from collections import Counter
-
-class Solution:
-    def subarraySum(self, nums, k):
-        seen = Counter({0: 1})
-        prefix = count = 0
-        for x in nums:
-            prefix += x
-            count += seen[prefix - k]
-            seen[prefix] += 1
-        return count
-""",
-}

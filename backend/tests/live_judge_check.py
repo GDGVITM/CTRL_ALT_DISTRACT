@@ -57,18 +57,18 @@ async def positives(client: Judge0Client) -> int:
 
 
 NEGATIVES = {
-    "wrong answer (py)": ("python", "pair-sum-window", "class Solution:\n    def solve(self, nums, k):\n        return [0, 0]\n", "WRONG ANSWER"),
-    "runtime error (py)": ("python", "climbing-stairs", "class Solution:\n    def climbStairs(self, n):\n        return 1 // 0\n", "RUNTIME ERROR"),
-    "syntax error (py)": ("python", "climbing-stairs", "class Solution:\n    def climbStairs(self, n)\n        return 1\n", "COMPILATION ERROR"),
-    "tle (py)": ("python", "climbing-stairs", "class Solution:\n    def climbStairs(self, n):\n        while True:\n            pass\n", "TIME LIMIT EXCEEDED"),
-    "stray prints (py)": ("python", "climbing-stairs", "class Solution:\n    def climbStairs(self, n):\n        print('debug', n)\n        a, b = 1, 1\n        for _ in range(n - 1):\n            a, b = b, a + b\n        return b\n", "ACCEPTED"),
-    "compile error (cpp)": ("cpp", "climbing-stairs", "class Solution {\npublic:\n    int climbStairs(int n) {\n        return n\n    }\n};\n", "COMPILATION ERROR"),
-    "compile error (c)": ("c", "climbing-stairs", "int climbStairs(int n) {\n    return undefined_symbol;\n}\n", "COMPILATION ERROR"),
-    "compile error (java)": ("java", "climbing-stairs", "class Solution {\n    public int climbStairs(int n) {\n        return \"x\";\n    }\n}\n", "COMPILATION ERROR"),
-    "public class (java)": ("java", "climbing-stairs", "public class Solution {\n    public int climbStairs(int n) {\n        return n == 1 ? 1 : n == 2 ? 2 : -1;\n    }\n}\n", "WRONG ANSWER"),
-    "exception (java)": ("java", "climbing-stairs", "class Solution {\n    public int climbStairs(int n) {\n        int[] a = new int[1];\n        return a[5];\n    }\n}\n", "RUNTIME ERROR"),
-    "segfault (c)": ("c", "climbing-stairs", "int climbStairs(int n) {\n    int* p = 0;\n    return *p;\n}\n", "RUNTIME ERROR"),
-    "tle (cpp)": ("cpp", "climbing-stairs", "class Solution {\npublic:\n    int climbStairs(int n) {\n        while (true) {}\n        return 0;\n    }\n};\n", "TIME LIMIT EXCEEDED"),
+    "wrong answer (py)": ("python", "second-largest-element", "class Solution:\n    def secondLargest(self, nums):\n        return -999\n", "WRONG ANSWER"),
+    "runtime error (py)": ("python", "find-missing-number", "class Solution:\n    def missingNumber(self, nums):\n        return 1 // 0\n", "RUNTIME ERROR"),
+    "syntax error (py)": ("python", "find-missing-number", "class Solution:\n    def missingNumber(self, nums)\n        return 1\n", "COMPILATION ERROR"),
+    "tle (py)": ("python", "find-missing-number", "class Solution:\n    def missingNumber(self, nums):\n        while True:\n            pass\n", "TIME LIMIT EXCEEDED"),
+    "stray prints (py)": ("python", "find-missing-number", "class Solution:\n    def missingNumber(self, nums):\n        print('debug', len(nums))\n        n = len(nums)\n        return n * (n + 1) // 2 - sum(nums)\n", "ACCEPTED"),
+    "compile error (cpp)": ("cpp", "find-missing-number", "class Solution {\npublic:\n    int missingNumber(vector<int>& nums) {\n        return n\n    }\n};\n", "COMPILATION ERROR"),
+    "compile error (c)": ("c", "find-missing-number", "int missingNumber(int* nums, int numsSize) {\n    return undefined_symbol;\n}\n", "COMPILATION ERROR"),
+    "compile error (java)": ("java", "find-missing-number", "class Solution {\n    public int missingNumber(int[] nums) {\n        return \"x\";\n    }\n}\n", "COMPILATION ERROR"),
+    "public class (java)": ("java", "find-missing-number", "public class Solution {\n    public int missingNumber(int[] nums) {\n        return -1;\n    }\n}\n", "WRONG ANSWER"),
+    "exception (java)": ("java", "find-missing-number", "class Solution {\n    public int missingNumber(int[] nums) {\n        int[] a = new int[1];\n        return a[5];\n    }\n}\n", "RUNTIME ERROR"),
+    "segfault (c)": ("c", "find-missing-number", "int missingNumber(int* nums, int numsSize) {\n    int* p = 0;\n    return *p;\n}\n", "RUNTIME ERROR"),
+    "tle (cpp)": ("cpp", "find-missing-number", "class Solution {\npublic:\n    int missingNumber(vector<int>& nums) {\n        while (true) {}\n        return 0;\n    }\n};\n", "TIME LIMIT EXCEEDED"),
 }
 
 

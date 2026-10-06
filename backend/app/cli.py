@@ -74,7 +74,20 @@ async def _run(args: argparse.Namespace) -> int:
             if args.command == "migrate":
                 ran = await migrate(conn)
                 print("applied:", ", ".join(ran) if ran else "nothing to do")
+            elif args.command == "reset-event":
+                for table in ("proctor_events", "distraction_events", "submissions", "round_attempts", "participations"):
+                    await conn.execute(f"DELETE FROM public.{table}")
+                await conn.execute(
+                    "UPDATE public.event_config SET status='lobby', started_at=NULL, ended_at=NULL, updated_at=now()"
+                )
+                print("Event reset successfully: all previous test runs and participations wiped.")
             elif args.command == "seed":
+                if args.force:
+                    for table in ("proctor_events", "distraction_events", "submissions", "round_attempts", "participations"):
+                        await conn.execute(f"DELETE FROM public.{table}")
+                    await conn.execute(
+                        "UPDATE public.event_config SET status='lobby', started_at=NULL, ended_at=NULL, updated_at=now()"
+                    )
                 if args.pdf:
                     from .seed.pdf_import import build_rows, parse_questions
 
@@ -107,12 +120,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("migrate", help="apply pending SQL migrations")
+    sub.add_parser("reset-event", help="wipe run data and reset event state to lobby")
     seed = sub.add_parser("seed", help="load the problem set and test cases (replaces the current set)")
     seed.add_argument("--pdf", help="the organisers' 'Coding Solutions' PDF (questions, examples, hidden tests)")
     seed.add_argument("--trust-oracle", action="store_true",
                       help="when the PDF contradicts itself, use the statement-consistent answer instead of refusing")
     seed.add_argument("--rounds", type=int, help="questions each player is dealt (default: keep the current setting)")
     seed.add_argument("--demo", action="store_true", help="the built-in function-style demo problems")
+    seed.add_argument("--force", action="store_true", help="wipe participations and reset event before seeding")
     sub.add_parser("status", help="print row counts")
     admin = sub.add_parser("make-admin", help="promote an existing user to admin")
     admin.add_argument("email")
