@@ -9,6 +9,8 @@ import type { LeaderboardEntry } from "../lib/types";
 import { cn, padScore } from "../lib/utils";
 import { useEvent } from "../context/EventContext";
 import { useAuth } from "../context/AuthContext";
+import { Footer } from "../components/Footer";
+
 
 const PAGE_SIZE = 15;
 
@@ -312,6 +314,8 @@ export default function Leaderboard() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

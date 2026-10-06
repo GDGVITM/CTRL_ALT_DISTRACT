@@ -9,6 +9,7 @@ import { cn, formatMMSS, padScore } from "../lib/utils";
 import { useEvent, useRefreshEvent } from "../context/EventContext";
 import { useMe } from "../context/MeContext";
 import { useAuth } from "../context/AuthContext";
+import { Footer } from "../components/Footer";
 
 type DashState = "not-joined" | "joined" | "waiting" | "live" | "ended" | "finished";
 
@@ -159,7 +160,7 @@ export default function Dashboard() {
                     meta.badge === "live" && "border-danger/40 bg-fill-danger text-danger",
                     meta.badge === "waiting" && "border-warning/40 bg-fill-warning text-warning",
                     (meta.badge === "upcoming" || meta.badge === "joined") &&
-                      "border-accent-cyan/30 bg-fill-info text-accent-cyan",
+                    "border-accent-cyan/30 bg-fill-info text-accent-cyan",
                     meta.badge === "ended" && "border-border-default bg-white/5 text-text-muted",
                     meta.badge === "finished" && "border-success/35 bg-fill-success text-success",
                   )}
@@ -337,6 +338,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+
+      <Footer />
     </div>
   );
 }
