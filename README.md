@@ -56,7 +56,7 @@ On macOS or Linux, use `cp` instead of `Copy-Item`.
 | `.env` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` |
 | `backend/.env` | `SUPABASE_URL`, `DATABASE_URL`, `CORS_ORIGINS`, and Judge0 settings |
 
-Set `VITE_API_URL` to `http://localhost:8000` for local development. Use the same Supabase project for the frontend and backend, and include your frontend origin in `CORS_ORIGINS`.
+Set `VITE_API_URL` to `/` for local development and laptop hosting. Vite proxies `/api` to the backend locally, and the hosted website calls the API on its own public address. Use the same Supabase project for the frontend and backend. If deploying the API at a separate address, set `VITE_API_URL` to that address and include your frontend origin in `CORS_ORIGINS`.
 
 Use the Supabase **session pooler** connection string for `DATABASE_URL` on networks without IPv6 access. URL-encode special characters in the database password, such as `@` → `%40`. Keep database credentials and service keys in the backend environment only.
 
@@ -105,6 +105,46 @@ docker compose up --build
 This starts the backend on port 8000. Database migrations, problem seeding, and the frontend are separate setup steps.
 
 </details>
+
+## Host from a Windows laptop with ngrok
+
+Install the frontend and backend dependencies and configure both `.env` files as above.
+Install ngrok and save your account token once in your own terminal:
+
+```powershell
+ngrok config add-authtoken YOUR_TOKEN
+```
+
+Get the token from https://dashboard.ngrok.com/get-started/your-authtoken. Keep it out of the repository.
+Then run from the project root:
+
+```powershell
+npm run host
+```
+
+This builds the website with relative API URLs, starts FastAPI on `127.0.0.1:8000`,
+and opens one ngrok tunnel for both the website and `/api`. Share the HTTPS
+**Forwarding** URL printed by ngrok. Direct links such as `/login` and `/dashboard`
+also work. The public server serves only `dist`, with API documentation disabled.
+Logs are saved in the ignored `.hosting` folder.
+
+In a second terminal, run `npm run host:logs` to watch frontend page and asset
+requests, backend API requests and errors, and ngrok tunnel logs together.
+For a single service, run `npm run host:logs -- -Service backend` (or `frontend`
+or `ngrok`). Browser JavaScript console errors remain in browser DevTools (F12).
+Closing the log viewer leaves the server running.
+
+Keep the terminal open and the laptop awake and connected to the internet. Press
+Ctrl+C to stop hosting. To choose another local port or a domain assigned to your
+ngrok account:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/host.ps1 -Port 8001 -PublicUrl https://YOUR-DOMAIN.ngrok-free.app
+```
+
+If using Supabase email confirmation, password reset, or OAuth redirects, allow
+the public URL in Supabase Auth's redirect URL settings. Database migrations and
+question seeding remain separate setup steps; hosting does not change event data.
 
 ## Participant and admin access
 

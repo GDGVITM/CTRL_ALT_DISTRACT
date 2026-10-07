@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "host": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/host.ps1",
+    "host:logs": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/logs.ps1",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",

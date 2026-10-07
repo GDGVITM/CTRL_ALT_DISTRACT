@@ -704,7 +704,6 @@ export default function Arena() {
           <DistractionModal
             index={distraction}
             onResolved={(cleared, result) => void handleDistractionResolved(cleared, result)}
-            onExit={openExitDialog}
             exitDisabled={exitDisabled}
           />
         )}

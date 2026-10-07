@@ -43,7 +43,7 @@ export function ExitChallengeDialog({
       className="fixed inset-0 m-auto w-[calc(100%_-_2rem)] max-w-[460px] border-2 border-danger/60 bg-bg-elevated p-6 text-text-primary backdrop:bg-black/75 backdrop:backdrop-blur-sm"
     >
       <h2 id="exit-challenge-title" className="font-sans text-xl font-semibold">
-        Exit the challenge?
+        Exit the contest?
       </h2>
       <div id="exit-challenge-description" className="mt-3 space-y-3 font-body text-sm text-text-secondary">
         <p>Your participation will end, and you cannot resume or rejoin this event.</p>
@@ -62,7 +62,7 @@ export function ExitChallengeDialog({
           Keep coding
         </button>
         <Button variant="danger" onClick={onConfirm} loading={exiting} loadingLabel="Exiting…">
-          Exit challenge
+          Exit contest
         </Button>
       </div>
     </dialog>
