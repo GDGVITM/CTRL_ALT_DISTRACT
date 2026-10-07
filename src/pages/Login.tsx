@@ -201,20 +201,9 @@ export default function Login() {
             />
 
             <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label htmlFor="password" className="font-body text-xs sm:text-sm font-medium text-text-primary">
-                  Password
-                </label>
-                {mode === "sign-in" && (
-                  <button
-                    type="button"
-                    onClick={() => alert("Password reset functionality is routed to Supabase Auth.")}
-                    className="font-body text-xs text-accent-cyan hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                )}
-              </div>
+              <label htmlFor="password" className="mb-1 block font-body text-xs sm:text-sm font-medium text-text-primary">
+                Password
+              </label>
               <TextInput
                 id="password"
                 type={showPassword ? "text" : "password"}
