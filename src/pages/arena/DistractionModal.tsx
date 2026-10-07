@@ -18,12 +18,10 @@ type ModalPhase = "intro" | "playing" | "result";
 export function DistractionModal({
   index,
   onResolved,
-  onExit,
   exitDisabled,
 }: {
   index: number;
   onResolved: (cleared: boolean, result: DistractionResultType | null) => void;
-  onExit: () => void;
   exitDisabled: boolean;
 }) {
   const EVENT = useEvent();
@@ -109,6 +107,20 @@ export function DistractionModal({
     onResolved(isSuccess, resultPayload);
   };
 
+  const handleExitDistraction = () => {
+    // Leaving the mini-game resolves only this interruption, never participation.
+    const result: DistractionResultType = resultPayload ?? {
+      distractionId: meta.id,
+      result: "failed",
+      timeTaken: Math.max(0, timeLimit - timeRemaining),
+      timeTakenSeconds: Math.max(0, timeLimit - timeRemaining),
+      metrics: { reason: "Exited distraction" },
+      timestamp: new Date().toISOString(),
+      problemId: index,
+    };
+    onResolved(result.result === "passed", result);
+  };
+
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
@@ -140,8 +152,8 @@ export function DistractionModal({
             <span className="flex items-center gap-1 font-mono text-sm sm:text-base font-bold text-accent-magenta">
               +{EVENT.bonusPoints} BONUS 🪙
             </span>
-            <Button variant="danger" size="sm" onClick={onExit} disabled={exitDisabled}>
-              Exit challenge
+            <Button variant="danger" size="sm" onClick={handleExitDistraction} disabled={exitDisabled}>
+              Exit distraction
             </Button>
           </div>
         </div>

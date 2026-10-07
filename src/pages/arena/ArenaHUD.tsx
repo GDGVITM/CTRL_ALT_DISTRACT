@@ -111,11 +111,11 @@ export function ArenaHUD({
           disabled={exitDisabled}
           loading={exiting}
           loadingLabel="Exiting…"
-          aria-label="Exit challenge"
+          aria-label="Exit contest"
           className="shrink-0 !px-2 sm:!px-3"
         >
           <span className="sm:hidden">Exit</span>
-          <span className="hidden sm:inline">Exit challenge</span>
+          <span className="hidden sm:inline">Exit contest</span>
         </Button>
 
         {/* Score */}
