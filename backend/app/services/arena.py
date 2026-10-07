@@ -113,22 +113,38 @@ async def _resolve_round(
     time_ms: int,
     points: int,
 ) -> asyncpg.Record | None:
-    """Close an active round exactly once and roll the result into the participant's totals."""
+    """Close an active round exactly once and roll the result into the participant's totals.
+    If solved before the scheduled distraction appears (pending), award full distraction bonus points.
+    """
     part = await _participation(conn, user_id)
+    attempt = await _attempt(conn, user_id, round_no)
+    if attempt is None or attempt["status"] != "active":
+        return None
+
+    # If the user solved the question before the distraction triggered, grant the distraction bonus!
+    awarded_bonus = 0
+    if status == "solved" and attempt["distraction_state"] == "pending":
+        awarded_bonus = ev["bonus_points"]
+
     finished = status == "solved" and part["solved_count"] + 1 >= ev["total_rounds"]
     row = await conn.fetchrow(
         """
         UPDATE public.round_attempts
         SET status = $3::round_status, resolved_at = now(), time_ms = $4, points = $5,
+            bonus = CASE WHEN $6 > 0 THEN $6 ELSE bonus END,
             paused_ms = paused_ms
                 + COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM (now() - pause_started_at)) * 1000)::int), 0)
                 + COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM (now() - suspended_at)) * 1000)::int), 0),
-            distraction_state = CASE WHEN distraction_state IN ('pending', 'active') THEN 'missed' ELSE distraction_state END,
+            distraction_state = CASE
+                WHEN distraction_state = 'pending' AND $6 > 0 THEN 'cleared'
+                WHEN distraction_state IN ('pending', 'active') THEN 'missed'
+                ELSE distraction_state
+            END,
             pause_started_at = NULL, suspended_at = NULL, submit_lock_until = NULL
         WHERE user_id = $1::uuid AND round_no = $2 AND status = 'active'
         RETURNING *
         """,
-        user_id, round_no, status, time_ms, points,
+        user_id, round_no, status, time_ms, points, awarded_bonus,
     )
     if row is None:
         return None
@@ -136,13 +152,15 @@ async def _resolve_round(
         """
         UPDATE public.participations
         SET round_pts = round_pts + $2,
-            solved_count = solved_count + $3,
-            total_time_ms = total_time_ms + $4,
-            status = CASE WHEN $5 THEN 'finished'::participant_status ELSE status END,
-            finished_at = CASE WHEN $5 THEN now() ELSE finished_at END
+            bonus_pts = bonus_pts + $3,
+            distractions_cleared = distractions_cleared + (CASE WHEN $3 > 0 THEN 1 ELSE 0 END),
+            solved_count = solved_count + $4,
+            total_time_ms = total_time_ms + $5,
+            status = CASE WHEN $6 THEN 'finished'::participant_status ELSE status END,
+            finished_at = CASE WHEN $6 THEN now() ELSE finished_at END
         WHERE user_id = $1::uuid
         """,
-        user_id, points, 1 if status == "solved" else 0, time_ms, finished,
+        user_id, points, awarded_bonus, 1 if status == "solved" else 0, time_ms, finished,
     )
     return row
 
